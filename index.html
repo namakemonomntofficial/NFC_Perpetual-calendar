@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="nfc-calendar-version" content="2026.07.05.2">
+<meta name="nfc-calendar-version" content="2026.07.05.4">
 <title>Wearable Perpetual Calendar</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Ubuntu+Condensed&family=Noto+Sans+JP:wght@400;700&family=Saira+Condensed:wght@400;700&family=Saira+Extra+Condensed:wght@400;700&display=swap');
@@ -15,7 +15,7 @@
        text-align: center; padding: 6px 0 8px; border-bottom: 1px solid #2a2a2a; }
   .version-label { margin-top: -6px; text-align: center; font-size: 10px; color: #4f4f4f; letter-spacing: .04em; }
 
-  /* ── 設定パネル ── */
+  /* 笏笏 險ｭ螳壹ヱ繝阪Ν 笏笏 */
   .settings { display: flex; flex-direction: column; gap: 8px;
               background: #202020; border-radius: 10px; padding: 10px; }
   .settings-title { font-size: 11px; color: #555; letter-spacing: .06em; font-weight: 600; margin-bottom: 2px; }
@@ -57,11 +57,11 @@
   .sep { border: none; border-top: 1px solid #2a2a2a; margin: 2px 0; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-  /* ── 上段: カレンダープレビュー + メモ1 ── */
+  /* 笏笏 荳頑ｮｵ: 繧ｫ繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ + 繝｡繝｢1 笏笏 */
   .top-row { display: flex; gap: 8px; align-items: stretch; }
   .cal-preview-wrap { flex-shrink: 0; display: flex; flex-direction: column; gap: 3px; }
   .canvas-label { font-size: 10px; color: #555; text-align: center; }
-  /* 正方形・UI幅の半分 */
+  /* 豁｣譁ｹ蠖｢繝ｻUI蟷・・蜊雁・ */
   #cvCal {
     display: block;
     width: calc(50vw - 18px);
@@ -71,11 +71,11 @@
     border: 1px solid #333;
     pointer-events: none;
   }
-  /* メモ1: カレンダープレビューと同じ高さ */
+  /* 繝｡繝｢1: 繧ｫ繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ縺ｨ蜷後§鬮倥＆ */
   .memo1-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .memo1-wrap .ctrl-label { font-size: 10px; color: #666; }
   #memoText {
-    flex: 1;          /* 親の高さいっぱいに伸びる */
+    flex: 1;          /* 隕ｪ縺ｮ鬮倥＆縺・▲縺ｱ縺・↓莨ｸ縺ｳ繧・*/
     width: 100%; font-size: 13px; padding: 6px 8px;
     border: 1px solid #333; border-radius: 6px;
     background: #222; color: #e0e0e0;
@@ -83,7 +83,7 @@
     min-height: 60px;
   }
 
-  /* ── メモ2 ── */
+  /* 笏笏 繝｡繝｢2 笏笏 */
   .memo2-wrap { display: flex; flex-direction: column; gap: 3px; }
   #memo2Text {
     width: 100%; font-size: 13px; padding: 6px 8px;
@@ -93,7 +93,7 @@
     min-height: 15em;
   }
 
-  /* ── 全体プレビュー ── */
+  /* 笏笏 蜈ｨ菴薙・繝ｬ繝薙Η繝ｼ 笏笏 */
   .full-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .full-preview-label { font-size: 10px; color: #444; }
   #cvFull {
@@ -126,7 +126,7 @@
     border: 1px solid #444;
   }
 
-  /* ── ボタン ── */
+  /* 笏笏 繝懊ち繝ｳ 笏笏 */
   .btn-row { display: flex; gap: 8px; padding-bottom: 20px; }
   .btn { flex: 1; padding: 11px 0; border-radius: 8px; border: none;
          font-size: 13px; font-weight: 600; cursor: pointer;
@@ -150,9 +150,9 @@
   <h1>WEARABLE PERPETUAL CALENDAR</h1>
   <div class="version-label" id="appVersionLabel"></div>
 
-  <!-- ① 設定パネル（最上部） -->
+  <!-- 設定 -->
   <div class="settings">
-    <div class="settings-title">⚙ 設定</div>
+    <div class="settings-title">設定</div>
 
     <div class="ctrl-group">
       <span class="ctrl-label">基準日</span>
@@ -232,7 +232,7 @@
 
     <div class="two-col">
       <div class="ctrl-group">
-        <span class="ctrl-label">背景 ／ 文字色</span>
+        <span class="ctrl-label">背景 / 文字色</span>
         <div class="bg-toggle-row">
           <span class="bg-lbl">白</span>
           <label class="toggle">
@@ -255,7 +255,7 @@
     </div>
   </div><!-- /settings -->
 
-  <!-- ② カレンダープレビュー + メモ1 横並び -->
+  <!-- カレンダープレビュー + メモ1 -->
   <div class="top-row">
     <div class="cal-preview-wrap">
       <span class="canvas-label">カレンダープレビュー</span>
@@ -267,13 +267,13 @@
     </div>
   </div>
 
-  <!-- ③ メモ2（全幅） -->
+  <!-- メモ2 -->
   <div class="memo2-wrap">
     <span class="ctrl-label">メモ2（横線の下・自由記述）</span>
     <textarea id="memo2Text" rows="10" placeholder="メモを入力..."></textarea>
   </div>
 
-  <!-- ④ 全体プレビュー（幅フル） -->
+  <!-- 全体プレビュー -->
   <div class="full-preview-wrap">
     <span class="full-preview-label">全体プレビュー（176 × 264 px）</span>
     <canvas id="cvFull" width="176" height="264"></canvas>
@@ -282,10 +282,10 @@
     <canvas id="tapLoupeCanvas" width="96" height="96"></canvas>
   </div>
 
-  <!-- ⑤ ボタン -->
+  <!-- ボタン -->
   <div class="btn-row">
-    <button class="btn btn-send hidden" id="btnSend">📡 e-Paperに転送</button>
-    <button class="btn btn-dl" id="btnDl">↓ PNG 保存</button>
+    <button class="btn btn-send hidden" id="btnSend">e-Paperに転送</button>
+    <button class="btn btn-dl" id="btnDl">PNG 保存</button>
   </div>
   <div class="transfer-status hidden" id="transferStatus"></div>
   <div class="debug-panel">
@@ -318,7 +318,7 @@ const COL_SQUEEZE    = 2;
 const MONTH_OFFSET_X = -2;
 const NUMBER_OFFSET_Y = 1;
 const SELECTED_INSET  = 1;
-const APP_HTML_VERSION = '2026.07.05.2';
+const APP_HTML_VERSION = '2026.07.05.4';
 window.NFC_CALENDAR_VERSION = APP_HTML_VERSION;
 let calHitCells = [];
 let fullHitCells = [];
@@ -330,7 +330,7 @@ const p2 = n => String(n).padStart(2,'0');
 get('baseDate').value =
   `${today.getFullYear()}-${p2(today.getMonth()+1)}-${p2(today.getDate())}`;
 
-// ── ユーティリティ ──────────────────────────────────────────────
+// 笏笏 繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
 
 function getTwoDigitMaxW(c, weight, size, font) {
   c.font = `${weight} ${size}px ${font}`;
@@ -506,10 +506,8 @@ function applyOneBitSharpen(canvas, context) {
   context.putImageData(image, 0, 0);
 }
 
-// ── カレンダー描画コア ──
-// showMemos=true → 縦線・横線・メモ1・メモ2を描画（全体プレビュー）
-// showMemos=false → 縦線のみ描画、メモ1も描画（カレンダープレビュー）
-// ※縦線はどちらも常に描画
+// 笏笏 繧ｫ繝ｬ繝ｳ繝繝ｼ謠冗判繧ｳ繧｢ 笏笏
+// showMemos=true 竊・邵ｦ邱壹・讓ｪ邱壹・繝｡繝｢1繝ｻ繝｡繝｢2繧呈緒逕ｻ・亥・菴薙・繝ｬ繝薙Η繝ｼ・・// showMemos=false 竊・邵ｦ邱壹・縺ｿ謠冗判縲√Γ繝｢1繧よ緒逕ｻ・医き繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ・・// 窶ｻ邵ｦ邱壹・縺ｩ縺｡繧峨ｂ蟶ｸ縺ｫ謠冗判
 
 function drawCalendar(c, canvasH, showMemos) {
   const dark      = get('darkMode').checked;
@@ -543,26 +541,24 @@ function drawCalendar(c, canvasH, showMemos) {
   const mColW = twoDigitW - 1;
   const mColX = MONTH_OFFSET_X;
   const calX  = mColX + mColW + 1 + CAL_OFFSET_X;
-  const startY = 0; // 全体を上端に詰める
+  const startY = 0; // 蜈ｨ菴薙ｒ荳顔ｫｯ縺ｫ隧ｰ繧√ｋ
 
   const lastColX = colX(calX, COLS - 1, cW);
   const divX     = lastColX + cW;
-  const memoX    = divX + 2; // カレンダーとの余白は2pxのみ
+  const memoX    = divX + 2; // 繧ｫ繝ｬ繝ｳ繝繝ｼ縺ｨ縺ｮ菴咏區縺ｯ2px縺ｮ縺ｿ
   const memoW    = 176 - memoX;
 
-  // 背景
+  // 閭梧勹
   c.fillStyle = bg;
   c.fillRect(0, 0, 176, canvasH);
 
-  // 横線（全体プレビューのみ）
-  if (showMemos) {
   if (showMemos) {
     const hLineY = startY + ROWS * cH + 1;
     c.fillStyle = color;
     c.fillRect(2, hLineY, 172, 1);
   }
 
-  // ── カレンダー数字・枠・反転 ──
+  // 笏笏 繧ｫ繝ｬ繝ｳ繝繝ｼ謨ｰ蟄励・譫繝ｻ蜿崎ｻ｢ 笏笏
   const cells = [];
   for (let i = 0; i < COLS * ROWS; i++) {
     const col = i % COLS;
@@ -605,7 +601,7 @@ function drawCalendar(c, canvasH, showMemos) {
     }
   }
 
-  // ── 月列（数字固定） ──
+  // 笏笏 譛亥・・域焚蟄怜崋螳夲ｼ・笏笏
   for (let row = 0; row < ROWS; row++) {
     const cy = startY + row * cH;
     if (cy + cH > canvasH) continue;
@@ -631,7 +627,7 @@ function drawCalendar(c, canvasH, showMemos) {
     }
   }
 
-  // ── メモ1（カレンダープレビューでも描画） ──
+  // 笏笏 繝｡繝｢1・医き繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ縺ｧ繧よ緒逕ｻ・・笏笏
   const memoLines = get('memoText').value.split('\n').slice(0, ROWS);
   const memoFont  = get('memoFont').value;
   const memoSize  = getNumberValue('memoFontSize', 14);
@@ -652,7 +648,7 @@ function drawCalendar(c, canvasH, showMemos) {
   return { twoDigitW, boxW, boxH, cW, cH, calX, startY, mColW, mColX, extra, divX, memoX, memoW, cells };
 }
 
-// ── メモ2描画（全体プレビューのみ）──
+// 笏笏 繝｡繝｢2謠冗判・亥・菴薙・繝ｬ繝薙Η繝ｼ縺ｮ縺ｿ・俄楳笏
 
 function drawMemos(c, layout) {
   const dark     = get('darkMode').checked;
@@ -686,16 +682,12 @@ function drawMemos(c, layout) {
   }
 }
 
-// ── メイン描画 ──
+// 笏笏 繝｡繧､繝ｳ謠冗判 笏笏
 
 function draw() {
   const calLayout = drawCalendar(ctxCal, 176, false);
-  // カレンダープレビュー（176×176・線なし・メモなし）
-  const calLayout = drawCalendar(ctxCal, 176, false);
   calHitCells = calLayout ? calLayout.cells : [];
 
-  // 全体プレビュー（176×264・線あり・メモあり）
-  const layout = drawCalendar(ctxFull, 264, true);
   const layout = drawCalendar(ctxFull, 264, true);
   if (layout) drawMemos(ctxFull, layout);
   fullHitCells = layout ? layout.cells : [];
@@ -704,7 +696,32 @@ function draw() {
   applyOneBitSharpen(cvFull, ctxFull);
 }
 
-// ── イベント ──
+function showDrawError(error) {
+  const message = String(error?.message || error || 'unknown error').slice(0, 48);
+  console.error('preview draw failed', error);
+  for (const [canvas, context] of [[cvCal, ctxCal], [cvFull, ctxFull]]) {
+    context.save();
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#000000';
+    context.font = '700 12px sans-serif';
+    context.textBaseline = 'top';
+    context.fillText('DRAW ERR', 3, 3);
+    context.font = '10px sans-serif';
+    context.fillText(message, 3, 18);
+    context.restore();
+  }
+}
+
+function safeDraw() {
+  try {
+    draw();
+  } catch (error) {
+    showDrawError(error);
+  }
+}
+
+// 笏笏 繧､繝吶Φ繝・笏笏
 
 const STORAGE_KEY = 'wearable-calendar-v2';
 const MEMO1_WEEKS_KEY = 'wearable-calendar-memo1-weeks-v1';
@@ -807,12 +824,12 @@ function restoreSettings() {
     }
     ['fontSize', 'padding', 'memoFontSize'].forEach(id => clampNumberInput(get(id)));
   } catch (e) {
-    console.warn('設定の復元に失敗しました', e);
+    console.warn('險ｭ螳壹・蠕ｩ蜈・↓螟ｱ謨励＠縺ｾ縺励◆', e);
   }
 }
 
 function drawAndSave() {
-  draw();
+  safeDraw();
   saveSettings();
 }
 
@@ -898,7 +915,7 @@ cvFull.addEventListener('pointerdown', event => {
 ['fontSize', 'padding', 'memoFontSize'].forEach(id => {
   const el = get(id);
   el.addEventListener('input', () => {
-    draw();
+    safeDraw();
     if (el.value !== '') saveSettings();
   });
   el.addEventListener('change', () => {
@@ -925,7 +942,7 @@ loadFrameOverrides();
 restoreSettings();
 migrateLegacyMemo1();
 restoreMemo1ForDisplayedWeeks();
-draw();
+safeDraw();
 
 function currentImageDataUrl() {
   const transferCanvas = document.createElement('canvas');
@@ -994,7 +1011,7 @@ get('btnSend').addEventListener('click', () => {
     window.AndroidInterface.onSendRequested(dataUrl);
 });
 
-setTimeout(draw, 500);
+setTimeout(safeDraw, 500);
 </script>
 </body>
 </html>
