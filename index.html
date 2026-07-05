@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="nfc-calendar-version" content="2026.07.05.1">
+<meta name="nfc-calendar-version" content="2026.07.05.2">
 <title>Wearable Perpetual Calendar</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Ubuntu+Condensed&family=Noto+Sans+JP:wght@400;700&family=Saira+Condensed:wght@400;700&family=Saira+Extra+Condensed:wght@400;700&display=swap');
@@ -69,6 +69,7 @@
     aspect-ratio: 1 / 1;
     image-rendering: pixelated;
     border: 1px solid #333;
+    pointer-events: none;
   }
   /* メモ1: カレンダープレビューと同じ高さ */
   .memo1-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -101,6 +102,28 @@
     aspect-ratio: 176 / 264;
     image-rendering: pixelated;
     border: 1px solid #333;
+    cursor: crosshair;
+    touch-action: manipulation;
+  }
+  .tap-loupe {
+    position: fixed;
+    z-index: 30;
+    width: 150px;
+    height: 150px;
+    padding: 4px;
+    border: 1px solid #666;
+    border-radius: 8px;
+    background: #111;
+    box-shadow: 0 10px 28px rgba(0,0,0,.55);
+    pointer-events: none;
+  }
+  #tapLoupeCanvas {
+    display: block;
+    width: 140px;
+    height: 140px;
+    image-rendering: pixelated;
+    background: #fff;
+    border: 1px solid #444;
   }
 
   /* ── ボタン ── */
@@ -255,6 +278,9 @@
     <span class="full-preview-label">全体プレビュー（176 × 264 px）</span>
     <canvas id="cvFull" width="176" height="264"></canvas>
   </div>
+  <div class="tap-loupe hidden" id="tapLoupe">
+    <canvas id="tapLoupeCanvas" width="96" height="96"></canvas>
+  </div>
 
   <!-- ⑤ ボタン -->
   <div class="btn-row">
@@ -280,6 +306,9 @@ const cvCal  = document.getElementById('cvCal');
 const cvFull = document.getElementById('cvFull');
 const ctxCal  = cvCal.getContext('2d');
 const ctxFull = cvFull.getContext('2d');
+const tapLoupe = document.getElementById('tapLoupe');
+const tapLoupeCanvas = document.getElementById('tapLoupeCanvas');
+const tapLoupeContext = tapLoupeCanvas.getContext('2d');
 const get = id => document.getElementById(id);
 
 const COLS = 7, ROWS = 5;
@@ -289,9 +318,11 @@ const COL_SQUEEZE    = 2;
 const MONTH_OFFSET_X = -2;
 const NUMBER_OFFSET_Y = 1;
 const SELECTED_INSET  = 1;
-const APP_HTML_VERSION = '2026.07.05.1';
+const APP_HTML_VERSION = '2026.07.05.2';
 window.NFC_CALENDAR_VERSION = APP_HTML_VERSION;
 let calHitCells = [];
+let fullHitCells = [];
+let tapLoupeTimer = 0;
 let dateFrameOverrides = {};
 
 const today = new Date();
@@ -525,6 +556,7 @@ function drawCalendar(c, canvasH, showMemos) {
 
   // 横線（全体プレビューのみ）
   if (showMemos) {
+  if (showMemos) {
     const hLineY = startY + ROWS * cH + 1;
     c.fillStyle = color;
     c.fillRect(2, hLineY, 172, 1);
@@ -657,13 +689,16 @@ function drawMemos(c, layout) {
 // ── メイン描画 ──
 
 function draw() {
+  const calLayout = drawCalendar(ctxCal, 176, false);
   // カレンダープレビュー（176×176・線なし・メモなし）
   const calLayout = drawCalendar(ctxCal, 176, false);
   calHitCells = calLayout ? calLayout.cells : [];
 
   // 全体プレビュー（176×264・線あり・メモあり）
   const layout = drawCalendar(ctxFull, 264, true);
+  const layout = drawCalendar(ctxFull, 264, true);
   if (layout) drawMemos(ctxFull, layout);
+  fullHitCells = layout ? layout.cells : [];
 
   applyOneBitSharpen(cvCal, ctxCal);
   applyOneBitSharpen(cvFull, ctxFull);
@@ -793,17 +828,71 @@ document.querySelectorAll('.step-btn').forEach(btn => {
   });
 });
 
-cvCal.addEventListener('pointerdown', event => {
-  const rect = cvCal.getBoundingClientRect();
-  const x = (event.clientX - rect.left) * cvCal.width / rect.width;
-  const y = (event.clientY - rect.top) * cvCal.height / rect.height;
-  const hit = calHitCells.find(cell =>
+function hitDateCell(cells, x, y) {
+  return cells.find(cell =>
     x >= cell.x && x <= cell.x + cell.w &&
     y >= cell.y && y <= cell.y + cell.h
   );
-  if (!hit) return;
-  toggleDateFrame(hit.key);
-  drawAndSave();
+}
+
+function showTapLoupe(clientX, clientY, canvasX, canvasY) {
+  const srcSize = 24;
+  const zoom = tapLoupeCanvas.width / srcSize;
+  const sx = Math.max(0, Math.min(cvFull.width - srcSize, Math.round(canvasX - srcSize / 2)));
+  const sy = Math.max(0, Math.min(cvFull.height - srcSize, Math.round(canvasY - srcSize / 2)));
+  const markX = (canvasX - sx) * zoom;
+  const markY = (canvasY - sy) * zoom;
+
+  tapLoupeContext.save();
+  tapLoupeContext.imageSmoothingEnabled = false;
+  tapLoupeContext.clearRect(0, 0, tapLoupeCanvas.width, tapLoupeCanvas.height);
+  tapLoupeContext.drawImage(cvFull, sx, sy, srcSize, srcSize, 0, 0, tapLoupeCanvas.width, tapLoupeCanvas.height);
+  tapLoupeContext.lineWidth = 3;
+  tapLoupeContext.strokeStyle = '#ffffff';
+  tapLoupeContext.beginPath();
+  tapLoupeContext.moveTo(markX, 0);
+  tapLoupeContext.lineTo(markX, tapLoupeCanvas.height);
+  tapLoupeContext.moveTo(0, markY);
+  tapLoupeContext.lineTo(tapLoupeCanvas.width, markY);
+  tapLoupeContext.stroke();
+  tapLoupeContext.lineWidth = 1;
+  tapLoupeContext.strokeStyle = '#000000';
+  tapLoupeContext.beginPath();
+  tapLoupeContext.moveTo(markX, 0);
+  tapLoupeContext.lineTo(markX, tapLoupeCanvas.height);
+  tapLoupeContext.moveTo(0, markY);
+  tapLoupeContext.lineTo(tapLoupeCanvas.width, markY);
+  tapLoupeContext.stroke();
+  tapLoupeContext.restore();
+
+  tapLoupe.classList.remove('hidden');
+  const margin = 8;
+  const gap = 14;
+  const w = tapLoupe.offsetWidth;
+  const h = tapLoupe.offsetHeight;
+  let left = clientX + gap;
+  if (left + w > window.innerWidth - margin) left = clientX - w - gap;
+  left = Math.max(margin, Math.min(window.innerWidth - w - margin, left));
+  let top = clientY - h / 2;
+  top = Math.max(margin, Math.min(window.innerHeight - h - margin, top));
+  tapLoupe.style.left = `${left}px`;
+  tapLoupe.style.top = `${top}px`;
+
+  clearTimeout(tapLoupeTimer);
+  tapLoupeTimer = setTimeout(() => tapLoupe.classList.add('hidden'), 1300);
+}
+
+cvFull.addEventListener('pointerdown', event => {
+  event.preventDefault();
+  const rect = cvFull.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * cvFull.width / rect.width;
+  const y = (event.clientY - rect.top) * cvFull.height / rect.height;
+  const hit = hitDateCell(fullHitCells, x, y);
+  if (hit) {
+    toggleDateFrame(hit.key);
+    drawAndSave();
+  }
+  showTapLoupe(event.clientX, event.clientY, x, y);
 });
 
 ['fontSize', 'padding', 'memoFontSize'].forEach(id => {
