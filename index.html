@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="nfc-calendar-version" content="2026.07.05.1">
 <title>Wearable Perpetual Calendar</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Ubuntu+Condensed&family=Noto+Sans+JP:wght@400;700&family=Saira+Condensed:wght@400;700&family=Saira+Extra+Condensed:wght@400;700&display=swap');
@@ -12,6 +13,7 @@
   .page { max-width: 480px; margin: 0 auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
   h1 { font-size: 13px; font-weight: 600; color: #555; letter-spacing: .1em;
        text-align: center; padding: 6px 0 8px; border-bottom: 1px solid #2a2a2a; }
+  .version-label { margin-top: -6px; text-align: center; font-size: 10px; color: #4f4f4f; letter-spacing: .04em; }
 
   /* ── 設定パネル ── */
   .settings { display: flex; flex-direction: column; gap: 8px;
@@ -123,6 +125,7 @@
 <body>
 <div class="page">
   <h1>WEARABLE PERPETUAL CALENDAR</h1>
+  <div class="version-label" id="appVersionLabel"></div>
 
   <!-- ① 設定パネル（最上部） -->
   <div class="settings">
@@ -285,7 +288,9 @@ const CAL_OFFSET_X   = -3;
 const COL_SQUEEZE    = 2;
 const MONTH_OFFSET_X = -2;
 const NUMBER_OFFSET_Y = 1;
-const SELECTED_INSET  = 2;
+const SELECTED_INSET  = 1;
+const APP_HTML_VERSION = '2026.07.05.1';
+window.NFC_CALENDAR_VERSION = APP_HTML_VERSION;
 let calHitCells = [];
 let dateFrameOverrides = {};
 
@@ -893,6 +898,7 @@ window.copyDebugLog = async () => {
 };
 get('btnCopyDebug').addEventListener('click', window.copyDebugLog);
 get('btnClearDebug').addEventListener('click', window.clearDebugLog);
+get('appVersionLabel').textContent = `v${APP_HTML_VERSION}`;
 get('btnSend').addEventListener('click', () => {
   const dataUrl = currentImageDataUrl();
   if (window.AndroidInterface?.onSendRequested)
