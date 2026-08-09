@@ -1,1017 +1,675 @@
-﻿<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="nfc-calendar-version" content="2026.07.05.4">
-<title>Wearable Perpetual Calendar</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>NFCカレンダー 1.54</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=Ubuntu+Condensed&family=Noto+Sans+JP:wght@400;700&family=Saira+Condensed:wght@400;700&family=Saira+Extra+Condensed:wght@400;700&display=swap');
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #1a1a1a; color: #e0e0e0; font-family: system-ui, sans-serif; font-size: 14px; }
-  .page { max-width: 480px; margin: 0 auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-  h1 { font-size: 13px; font-weight: 600; color: #555; letter-spacing: .1em;
-       text-align: center; padding: 6px 0 8px; border-bottom: 1px solid #2a2a2a; }
-  .version-label { margin-top: -6px; text-align: center; font-size: 10px; color: #4f4f4f; letter-spacing: .04em; }
-
-  /* 笏笏 險ｭ螳壹ヱ繝阪Ν 笏笏 */
-  .settings { display: flex; flex-direction: column; gap: 8px;
-              background: #202020; border-radius: 10px; padding: 10px; }
-  .settings-title { font-size: 11px; color: #555; letter-spacing: .06em; font-weight: 600; margin-bottom: 2px; }
-  .ctrl-group { display: flex; flex-direction: column; gap: 3px; }
-  .ctrl-label { font-size: 11px; color: #777; font-weight: 500; }
-  .hint { font-size: 10px; color: #4a4a4a; margin-top: 1px; }
-  select, input[type=date], input[type=number] {
-    width: 100%; font-size: 13px; padding: 5px 8px;
-    border: 1px solid #383838; border-radius: 6px;
-    background: #2a2a2a; color: #e0e0e0;
-    -webkit-appearance: none; appearance: none;
-  }
-  .stepper-row { display: grid; grid-template-columns: 42px minmax(58px, 1fr) 42px auto; align-items: center; gap: 6px; }
-  .step-btn {
-    width: 42px; height: 36px; border: 1px solid #3d3d3d; border-radius: 7px;
-    background: #2d2d2d; color: #e0e0e0; font-size: 18px; font-weight: 700;
-    line-height: 1; cursor: pointer; touch-action: manipulation;
-  }
-  .step-btn:active { background: #3a3a3a; }
-  .step-input {
-    height: 36px; text-align: center; font-size: 16px; font-weight: 700;
-    -moz-appearance: textfield;
-  }
-  .step-input::-webkit-outer-spin-button,
-  .step-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .unit { font-size: 10px; color: #555; }
-  .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-  .slider-toggle { position: absolute; inset: 0; background: #3a3a3a;
-                   border-radius: 20px; cursor: pointer; transition: background .2s; }
-  .slider-toggle::before { content: ''; position: absolute; width: 14px; height: 14px;
-    left: 3px; top: 3px; background: #888; border-radius: 50%; transition: transform .2s; }
-  .toggle input:checked + .slider-toggle { background: #5b9bd5; }
-  .toggle input:checked + .slider-toggle::before { transform: translateX(16px); background: #fff; }
-  .toggle-row { display: flex; align-items: center; gap: 10px; }
-  .toggle-label { font-size: 12px; color: #bbb; }
-  .bg-toggle-row { display: flex; align-items: center; gap: 8px; }
-  .bg-lbl { font-size: 11px; color: #666; }
-  .sep { border: none; border-top: 1px solid #2a2a2a; margin: 2px 0; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-  /* 笏笏 荳頑ｮｵ: 繧ｫ繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ + 繝｡繝｢1 笏笏 */
-  .top-row { display: flex; gap: 8px; align-items: stretch; }
-  .cal-preview-wrap { flex-shrink: 0; display: flex; flex-direction: column; gap: 3px; }
-  .canvas-label { font-size: 10px; color: #555; text-align: center; }
-  /* 豁｣譁ｹ蠖｢繝ｻUI蟷・・蜊雁・ */
-  #cvCal {
-    display: block;
-    width: calc(50vw - 18px);
-    max-width: 230px;
-    aspect-ratio: 1 / 1;
-    image-rendering: pixelated;
-    border: 1px solid #333;
-    pointer-events: none;
-  }
-  /* 繝｡繝｢1: 繧ｫ繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ縺ｨ蜷後§鬮倥＆ */
-  .memo1-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .memo1-wrap .ctrl-label { font-size: 10px; color: #666; }
-  #memoText {
-    flex: 1;          /* 隕ｪ縺ｮ鬮倥＆縺・▲縺ｱ縺・↓莨ｸ縺ｳ繧・*/
-    width: 100%; font-size: 13px; padding: 6px 8px;
-    border: 1px solid #333; border-radius: 6px;
-    background: #222; color: #e0e0e0;
-    resize: none; font-family: inherit; line-height: 1.5;
-    min-height: 60px;
-  }
-
-  /* 笏笏 繝｡繝｢2 笏笏 */
-  .memo2-wrap { display: flex; flex-direction: column; gap: 3px; }
-  #memo2Text {
-    width: 100%; font-size: 13px; padding: 6px 8px;
-    border: 1px solid #333; border-radius: 6px;
-    background: #222; color: #e0e0e0;
-    resize: vertical; font-family: inherit; line-height: 1.5;
-    min-height: 15em;
-  }
-
-  /* 笏笏 蜈ｨ菴薙・繝ｬ繝薙Η繝ｼ 笏笏 */
-  .full-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .full-preview-label { font-size: 10px; color: #444; }
-  #cvFull {
-    display: block;
-    width: 100%; max-width: 460px;
-    aspect-ratio: 176 / 264;
-    image-rendering: pixelated;
-    border: 1px solid #333;
-    cursor: crosshair;
-    touch-action: manipulation;
-  }
-  .tap-loupe {
-    position: fixed;
-    z-index: 30;
-    width: 150px;
-    height: 150px;
-    padding: 4px;
-    border: 1px solid #666;
-    border-radius: 8px;
-    background: #111;
-    box-shadow: 0 10px 28px rgba(0,0,0,.55);
-    pointer-events: none;
-  }
-  #tapLoupeCanvas {
-    display: block;
-    width: 140px;
-    height: 140px;
-    image-rendering: pixelated;
-    background: #fff;
-    border: 1px solid #444;
-  }
-
-  /* 笏笏 繝懊ち繝ｳ 笏笏 */
-  .btn-row { display: flex; gap: 8px; padding-bottom: 20px; }
-  .btn { flex: 1; padding: 11px 0; border-radius: 8px; border: none;
-         font-size: 13px; font-weight: 600; cursor: pointer;
-         transition: opacity .15s; letter-spacing: .04em; }
-  .btn:active { opacity: .7; }
-  .btn-send { background: #5b9bd5; color: #fff; }
-  .btn-dl   { background: #2a2a2a; color: #bbb; border: 1px solid #444; }
-  .transfer-status { font-size: 12px; color: #9fc7eb; text-align: center; min-height: 16px; margin-top: -4px; }
-  .debug-panel { background: #141414; border: 1px solid #333; border-radius: 8px; padding: 8px; }
-  .debug-title { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #777; margin-bottom: 6px; }
-  .debug-actions { display: flex; gap: 6px; }
-  .debug-clear { border: 1px solid #444; border-radius: 6px; background: #242424; color: #bbb; padding: 4px 8px; font-size: 11px; }
-  .debug-log { max-height: 180px; overflow: auto; white-space: pre-wrap; word-break: break-word; font: 11px/1.35 monospace; color: #b8d8b8; }
-  .hidden   { display: none !important; }
-  optgroup { color: #666; }
-  option   { color: #e0e0e0; background: #2a2a2a; }
+  @import url('https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=M+PLUS+1p:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Ubuntu+Condensed&family=Saira+Condensed:wght@400;700&family=Saira+Extra+Condensed:wght@400;700&display=swap');
+  :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #111; color: #eee; }
+  main { width: min(100%, 520px); margin: 0 auto; padding: 12px; }
+  h1 { margin: 0 0 10px; font-size: 18px; }
+  .preview-shell { position: relative; display: grid; place-items: center; padding: 12px; background: #252525; border-radius: 12px; }
+  #calendar { width: min(86vw, 360px); height: min(86vw, 360px); background: #fff; image-rendering: pixelated; touch-action: none; }
+  .loupe { position: absolute; width: 112px; height: 112px; padding: 2px; background: #fff; border: 2px solid #777; pointer-events: none; z-index: 3; }
+  .loupe.hidden { display: none; }
+  #loupeCanvas { width: 104px; height: 104px; image-rendering: pixelated; }
+  section { margin-top: 10px; padding: 10px; background: #202020; border-radius: 10px; }
+  .row { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+  .row > label { min-width: 76px; }
+  button, input, select { min-height: 40px; border: 1px solid #777; border-radius: 8px; background: #333; color: #fff; font-size: 15px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  button.primary { background: #145da0; border-color: #2c8ee8; }
+  button.danger { background: #7b2020; }
+  .mode { flex: 1 1 90px; }
+  .mode.active { outline: 3px solid #f1c40f; background: #555; }
+  .mode.holiday.active { outline-color: #ff5555; }
+  .status { margin: 4px 0; color: #bbb; font-size: 13px; line-height: 1.4; }
+  .stepper { display: inline-flex; align-items: center; gap: 4px; }
+  .stepper input { width: 70px; text-align: center; }
+  pre { margin: 6px 0 0; max-height: 180px; overflow: auto; padding: 8px; background: #080808; color: #9fef9f; font-size: 11px; white-space: pre-wrap; }
+  .grow { flex: 1; }
 </style>
 </head>
 <body>
-<div class="page">
-  <h1>WEARABLE PERPETUAL CALENDAR</h1>
-  <div class="version-label" id="appVersionLabel"></div>
+<main>
+  <h1>NFCカレンダー 1.54</h1>
+  <div class="preview-shell" id="previewShell">
+    <canvas id="calendar" width="200" height="200" aria-label="200×200 カレンダープレビュー"></canvas>
+    <div class="loupe hidden" id="loupe"><canvas id="loupeCanvas" width="104" height="104"></canvas></div>
+  </div>
 
-  <!-- 設定 -->
-  <div class="settings">
-    <div class="settings-title">設定</div>
-
-    <div class="ctrl-group">
-      <span class="ctrl-label">基準日</span>
-      <input type="date" id="baseDate">
+  <section>
+    <div class="row">
+      <button class="mode active" data-mode="view">詳細を見る</button>
+      <button class="mode" data-mode="event">予定モード</button>
+      <button class="mode holiday" data-mode="holiday">休日モード</button>
     </div>
-
-    <hr class="sep">
-
-    <div class="ctrl-group">
-      <span class="ctrl-label">カレンダーフォント</span>
-      <select id="fontSel">
-        <optgroup label="Webフォント">
-          <option value="'BIZ UDGothic', sans-serif">BIZ UDGothic</option>
-          <option value="'Ubuntu Condensed', sans-serif">Ubuntu Condensed</option>
-          <option value="'Saira Condensed', sans-serif">Saira Condensed</option>
-          <option value="'Saira Extra Condensed', sans-serif">Saira Extra Condensed</option>
-        </optgroup>
-        <optgroup label="システムフォント（端末依存）">
-          <option value="'DIN Condensed', 'Saira Condensed', sans-serif">DIN Condensed Bold ※</option>
-          <option value="'Bahnschrift Condensed', 'Bahnschrift SemiCondensed', 'Saira Extra Condensed', sans-serif">Bahnschrift Condensed ※</option>
-          <option value="'DIN 1451 Engschrift', 'DIN Condensed', 'Saira Extra Condensed', sans-serif">DIN 1451 Engschrift ※</option>
-        </optgroup>
-      </select>
-      <span class="hint">※ = システムフォント（macOS/iOS/Windows端末のみ表示）/ 未所持の場合は代替Webフォントを使用</span>
+    <div class="status" id="modeHelp">日付を選ぶと、その日の詳細を表示したまま書き込めます。未選択時は次の予定を表示します。</div>
+    <div class="row">
+      <button id="resetSelected">選択日の手動設定を自動に戻す</button>
     </div>
+  </section>
 
-    <div class="two-col">
-      <div class="ctrl-group">
-        <span class="ctrl-label">文字サイズ</span>
-        <div class="stepper-row">
-          <button type="button" class="step-btn" data-step-target="fontSize" data-step="-1" aria-label="文字サイズを小さく">‹</button>
-          <input class="step-input" type="number" id="fontSize" min="8" max="36" value="18" step="1" inputmode="numeric">
-          <button type="button" class="step-btn" data-step-target="fontSize" data-step="1" aria-label="文字サイズを大きく">›</button>
-          <span class="unit">px</span>
-        </div>
-      </div>
-      <div class="ctrl-group">
-        <span class="ctrl-label">余白</span>
-        <div class="stepper-row">
-          <button type="button" class="step-btn" data-step-target="padding" data-step="-1" aria-label="余白を小さく">‹</button>
-          <input class="step-input" type="number" id="padding" min="2" max="12" value="2" step="1" inputmode="numeric">
-          <button type="button" class="step-btn" data-step-target="padding" data-step="1" aria-label="余白を大きく">›</button>
-          <span class="unit">px</span>
-        </div>
-      </div>
+  <section>
+    <div class="row">
+      <label for="baseDate">基準日</label>
+      <input id="baseDate" type="date">
     </div>
+    <div class="row">
+      <button id="prevWeek">← 前週</button>
+      <button id="today">今日</button>
+      <button id="nextWeek">次週 →</button>
+    </div>
+    <div class="status" id="calendarState">カレンダーを確認しています</div>
+    <div class="status" id="tasksState">Googleタスクは未連携です</div>
+    <div class="row">
+      <button class="primary" id="connectTasks">Googleタスクを連携・更新</button>
+    </div>
+  </section>
 
-    <div class="ctrl-group">
-      <span class="ctrl-label">太さ</span>
-      <select id="fontWeight">
-        <option value="400">Regular</option>
-        <option value="700" selected>Bold</option>
+  <section>
+    <div class="row">
+      <label for="fontFamily">フォント</label>
+      <select id="fontFamily">
+        <option value="'BIZ UDGothic', sans-serif">BIZ UDGothic（旧アプリ標準）</option>
+        <option value="'Ubuntu Condensed', sans-serif">Ubuntu Condensed</option>
+        <option value="'Saira Condensed', sans-serif">Saira Condensed</option>
+        <option value="'Saira Extra Condensed', sans-serif">Saira Extra Condensed</option>
+        <option value="'DIN Condensed', 'Saira Condensed', sans-serif">DIN Condensed</option>
+        <option value="'Bahnschrift Condensed', 'Bahnschrift SemiCondensed', 'Saira Extra Condensed', sans-serif">Bahnschrift Condensed</option>
+        <option value="'DIN 1451 Engschrift', 'DIN Condensed', 'Saira Extra Condensed', sans-serif">DIN 1451 Engschrift</option>
       </select>
     </div>
-
-    <hr class="sep">
-
-    <div class="ctrl-group">
-      <span class="ctrl-label">メモフォント（メモ1・2 共通）</span>
-      <select id="memoFont">
-        <option value="'M PLUS 1p', sans-serif">M PLUS 1p（日本語）</option>
+    <div class="row">
+      <label for="fontSize">日付サイズ</label>
+      <span class="stepper">
+        <button data-target="fontSize" data-step="-1">−</button>
+        <input id="fontSize" type="number" min="13" max="20" value="17">
+        <button data-target="fontSize" data-step="1">＋</button>
+      </span>
+    </div>
+    <div class="row">
+      <label for="monthFontSize">月表示サイズ</label>
+      <span class="stepper">
+        <button data-target="monthFontSize" data-step="-1">−</button>
+        <input id="monthFontSize" type="number" min="10" max="20" value="15">
+        <button data-target="monthFontSize" data-step="1">＋</button>
+      </span>
+    </div>
+    <div class="row">
+      <label><input id="bold" type="checkbox" checked> 太字</label>
+      <label><input id="quantize" type="checkbox" checked> 白・黒・赤へ量子化</label>
+    </div>
+    <div class="row">
+      <label for="detailFontFamily">予定詳細フォント</label>
+      <select id="detailFontFamily">
+        <option value="'M PLUS 1p', sans-serif">M PLUS 1p（旧アプリ標準）</option>
         <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
         <option value="'BIZ UDGothic', sans-serif">BIZ UDGothic</option>
       </select>
     </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">メモ文字サイズ</span>
-      <div class="stepper-row">
-        <button type="button" class="step-btn" data-step-target="memoFontSize" data-step="-1" aria-label="メモ文字サイズを小さく">‹</button>
-        <input class="step-input" type="number" id="memoFontSize" min="6" max="30" value="14" step="1" inputmode="numeric">
-        <button type="button" class="step-btn" data-step-target="memoFontSize" data-step="1" aria-label="メモ文字サイズを大きく">›</button>
-        <span class="unit">px</span>
-      </div>
+    <div class="row">
+      <label for="detailFontSize">予定詳細サイズ</label>
+      <span class="stepper">
+        <button data-target="detailFontSize" data-step="-1">−</button>
+        <input id="detailFontSize" type="number" min="7" max="14" value="9">
+        <button data-target="detailFontSize" data-step="1">＋</button>
+      </span>
+      <label><input id="detailBold" type="checkbox" checked> 予定詳細を太字</label>
     </div>
+  </section>
 
-    <hr class="sep">
-
-    <div class="two-col">
-      <div class="ctrl-group">
-        <span class="ctrl-label">背景 / 文字色</span>
-        <div class="bg-toggle-row">
-          <span class="bg-lbl">白</span>
-          <label class="toggle">
-            <input type="checkbox" id="darkMode">
-            <span class="slider-toggle"></span>
-          </label>
-          <span class="bg-lbl">黒</span>
-        </div>
-      </div>
-      <div class="ctrl-group">
-        <span class="ctrl-label">1bitシャープ化</span>
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" id="antiAlias" checked>
-            <span class="slider-toggle"></span>
-          </label>
-          <span class="toggle-label">ON</span>
-        </div>
-      </div>
+  <section>
+    <div class="row">
+      <button class="primary" id="send">NFCで転送</button>
+      <button id="save">PNGを保存</button>
+      <span id="transferStatus" class="status grow"></span>
     </div>
-  </div><!-- /settings -->
+  </section>
 
-  <!-- カレンダープレビュー + メモ1 -->
-  <div class="top-row">
-    <div class="cal-preview-wrap">
-      <span class="canvas-label">カレンダープレビュー</span>
-      <canvas id="cvCal" width="176" height="176"></canvas>
+  <section>
+    <div class="row">
+      <button id="copyDebug">ログをコピー</button>
+      <button class="danger" id="clearDebug">クリア</button>
+      <span id="version" class="status"></span>
     </div>
-    <div class="memo1-wrap">
-      <span class="ctrl-label">メモ1（右列・5行）</span>
-      <textarea id="memoText" rows="5" placeholder="1行目&#10;2行目&#10;3行目&#10;4行目&#10;5行目"></textarea>
-    </div>
-  </div>
+    <pre id="debugLog"></pre>
+  </section>
+</main>
 
-  <!-- メモ2 -->
-  <div class="memo2-wrap">
-    <span class="ctrl-label">メモ2（横線の下・自由記述）</span>
-    <textarea id="memo2Text" rows="10" placeholder="メモを入力..."></textarea>
-  </div>
-
-  <!-- 全体プレビュー -->
-  <div class="full-preview-wrap">
-    <span class="full-preview-label">全体プレビュー（176 × 264 px）</span>
-    <canvas id="cvFull" width="176" height="264"></canvas>
-  </div>
-  <div class="tap-loupe hidden" id="tapLoupe">
-    <canvas id="tapLoupeCanvas" width="96" height="96"></canvas>
-  </div>
-
-  <!-- ボタン -->
-  <div class="btn-row">
-    <button class="btn btn-send hidden" id="btnSend">e-Paperに転送</button>
-    <button class="btn btn-dl" id="btnDl">PNG 保存</button>
-  </div>
-  <div class="transfer-status hidden" id="transferStatus"></div>
-  <div class="debug-panel">
-    <div class="debug-title">
-      <span>DEBUG</span>
-      <div class="debug-actions">
-        <button type="button" class="debug-clear" id="btnCopyDebug">copy</button>
-        <button type="button" class="debug-clear" id="btnClearDebug">clear</button>
-      </div>
-    </div>
-    <pre class="debug-log" id="debugLog"></pre>
-  </div>
-
-</div><!-- /page -->
 <script>
 'use strict';
-const cvCal  = document.getElementById('cvCal');
-const cvFull = document.getElementById('cvFull');
-const ctxCal  = cvCal.getContext('2d');
-const ctxFull = cvFull.getContext('2d');
-const tapLoupe = document.getElementById('tapLoupe');
-const tapLoupeCanvas = document.getElementById('tapLoupeCanvas');
-const tapLoupeContext = tapLoupeCanvas.getContext('2d');
-const get = id => document.getElementById(id);
-
-const COLS = 7, ROWS = 5;
-const MONTH_ALPHA    = ['J','F','M','A','M','J','J','A','S','O','N','D'];
-const CAL_OFFSET_X   = -3;
-const COL_SQUEEZE    = 2;
-const MONTH_OFFSET_X = -2;
-const NUMBER_OFFSET_Y = 1;
-const SELECTED_INSET  = 1;
-const APP_HTML_VERSION = '2026.07.05.4';
+const APP_HTML_VERSION = '2026.08.10.3';
 window.NFC_CALENDAR_VERSION = APP_HTML_VERSION;
-let calHitCells = [];
-let fullHitCells = [];
-let tapLoupeTimer = 0;
-let dateFrameOverrides = {};
 
-const today = new Date();
-const p2 = n => String(n).padStart(2,'0');
-get('baseDate').value =
-  `${today.getFullYear()}-${p2(today.getMonth()+1)}-${p2(today.getDate())}`;
+const $ = id => document.getElementById(id);
+const canvas = $('calendar');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const loupe = $('loupe');
+const loupeCanvas = $('loupeCanvas');
+const loupeCtx = loupeCanvas.getContext('2d');
+const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DETAIL_WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+const SETTINGS_KEY = 'nfc-calendar-154-settings-v1';
+const FRAME_OVERRIDES_KEY = 'nfc-calendar-154-frame-overrides-v1';
+const HOLIDAY_OVERRIDES_KEY = 'nfc-calendar-154-holiday-overrides-v1';
+const OLD_APP_DEFAULT_FONT = "'BIZ UDGothic', sans-serif";
+const OLD_APP_DEFAULT_DETAIL_FONT = "'M PLUS 1p', sans-serif";
+const COLS = 7;
+const ROWS = 5;
+const HEADER_H = 15;
+const GRID_Y = 15;
+const CALENDAR_BOTTOM = 140;
+const MONTH_DIVIDER_X = 24;
+const MONTH_CENTER_X = MONTH_DIVIDER_X / 2;
+const GRID_X = 26;
+const GRID_W = 173;
+const CELL_W = GRID_W / COLS;
+const CELL_H = (CALENDAR_BOTTOM - GRID_Y) / ROWS;
 
-// 笏笏 繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+let calendarItems = [];
+let taskItems = [];
+let itemsByDate = new Map();
+let automaticMarkedDates = new Set();
+let frameOverrides = {};
+let holidayOverrides = {};
+let hitCells = [];
+let editMode = 'view';
+let selectedDetailKey = '';
+let detailSelectionManual = false;
+let loupeTimer = 0;
 
-function getTwoDigitMaxW(c, weight, size, font) {
-  c.font = `${weight} ${size}px ${font}`;
-  let max = 0;
-  for (let i = 10; i <= 31; i++) {
-    const w = c.measureText(String(i)).width;
-    if (w > max) max = w;
-  }
-  return max;
-}
-function getSundayOfWeek(date) {
-  const d = new Date(date); d.setHours(0,0,0,0);
-  d.setDate(d.getDate() - d.getDay()); return d;
-}
-function getNewMonthInWeek(weekSunDate) {
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(weekSunDate); d.setDate(d.getDate() + i);
-    if (d.getDate() === 1) return d.getMonth();
-  }
-  return null;
-}
-function colX(calX, col, cW) {
-  return calX + col * cW - col * COL_SQUEEZE;
-}
-
-function nthWeekdayOfMonth(year, monthIndex, weekday, nth) {
-  const date = new Date(year, monthIndex, 1);
-  const offset = (weekday - date.getDay() + 7) % 7;
-  date.setDate(1 + offset + (nth - 1) * 7);
-  return date.getDate();
-}
-
-function springEquinoxDay(year) {
-  if (year <= 1979) return Math.floor(20.8357 + 0.242194 * (year - 1980) - Math.floor((year - 1983) / 4));
-  if (year <= 2099) return Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
-  return 20;
-}
-
-function autumnEquinoxDay(year) {
-  if (year <= 1979) return Math.floor(23.2588 + 0.242194 * (year - 1980) - Math.floor((year - 1983) / 4));
-  if (year <= 2099) return Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
-  return 23;
-}
-
-function addHoliday(set, year, monthIndex, day) {
-  set.add(`${year}-${p2(monthIndex + 1)}-${p2(day)}`);
-}
-
-function baseJapaneseHolidays(year) {
-  const set = new Set();
-  addHoliday(set, year, 0, 1);
-  addHoliday(set, year, 1, 11);
-  if (year >= 2020) addHoliday(set, year, 1, 23);
-  addHoliday(set, year, 2, springEquinoxDay(year));
-  addHoliday(set, year, 3, 29);
-  addHoliday(set, year, 4, 3);
-  addHoliday(set, year, 4, 4);
-  addHoliday(set, year, 4, 5);
-  addHoliday(set, year, 10, 3);
-  addHoliday(set, year, 10, 23);
-  if (year >= 2000) addHoliday(set, year, 0, nthWeekdayOfMonth(year, 0, 1, 2));
-  else addHoliday(set, year, 0, 15);
-  if (year === 2020) addHoliday(set, year, 6, 23);
-  else if (year === 2021) addHoliday(set, year, 6, 22);
-  else if (year >= 2003) addHoliday(set, year, 6, nthWeekdayOfMonth(year, 6, 1, 3));
-  else if (year >= 1996) addHoliday(set, year, 6, 20);
-  if (year === 2020) addHoliday(set, year, 7, 10);
-  else if (year === 2021) addHoliday(set, year, 7, 8);
-  else if (year >= 2016) addHoliday(set, year, 7, 11);
-  if (year >= 2003) addHoliday(set, year, 8, nthWeekdayOfMonth(year, 8, 1, 3));
-  else addHoliday(set, year, 8, 15);
-  addHoliday(set, year, 8, autumnEquinoxDay(year));
-  if (year === 2020) addHoliday(set, year, 6, 24);
-  else if (year === 2021) addHoliday(set, year, 6, 23);
-  else if (year >= 2000) addHoliday(set, year, 9, nthWeekdayOfMonth(year, 9, 1, 2));
-  else addHoliday(set, year, 9, 10);
-  if (year === 2019) {
-    addHoliday(set, year, 4, 1);
-    addHoliday(set, year, 9, 22);
-  }
-  return set;
-}
-
-const holidayCache = {};
-function japaneseHolidays(year) {
-  if (holidayCache[year]) return holidayCache[year];
-  const set = baseJapaneseHolidays(year);
-  for (const key of [...set].sort()) {
-    const date = dateFromKey(key);
-    if (date.getDay() !== 0) continue;
-    const sub = new Date(date);
-    do {
-      sub.setDate(sub.getDate() + 1);
-    } while (set.has(dateKey(sub)));
-    if (sub.getFullYear() === year) set.add(dateKey(sub));
-  }
-  for (let month = 0; month < 12; month++) {
-    for (let day = 2; day <= 30; day++) {
-      const date = new Date(year, month, day);
-      if (date.getMonth() !== month) continue;
-      const key = dateKey(date);
-      if (set.has(key)) continue;
-      const prev = new Date(date); prev.setDate(date.getDate() - 1);
-      const next = new Date(date); next.setDate(date.getDate() + 1);
-      if (set.has(dateKey(prev)) && set.has(dateKey(next))) set.add(key);
-    }
-  }
-  holidayCache[year] = set;
-  return set;
-}
-
-function dateFromKey(key) {
+const pad2 = value => String(value).padStart(2, '0');
+const dateKey = date => `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+function parseDate(key) {
   const [year, month, day] = key.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   date.setHours(0, 0, 0, 0);
   return date;
 }
-
-function isJapaneseHoliday(date) {
-  return japaneseHolidays(date.getFullYear()).has(dateKey(date));
+function baseDate() { return parseDate($('baseDate').value); }
+function displayedStart() {
+  const date = baseDate();
+  date.setDate(date.getDate() - date.getDay() - 14);
+  return date;
 }
-
-function isDefaultFramedDate(date) {
-  const day = date.getDay();
-  return day === 0 || day === 6 || isJapaneseHoliday(date);
-}
-
-function isDateFramed(date) {
-  const key = dateKey(date);
-  if (Object.prototype.hasOwnProperty.call(dateFrameOverrides, key)) {
-    return !!dateFrameOverrides[key];
-  }
-  return isDefaultFramedDate(date);
-}
-
-function getBaseDate() {
-  const value = get('baseDate').value;
-  if (!value) return null;
-  const [y, m, d] = value.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  date.setHours(0, 0, 0, 0);
+function displayedEnd() {
+  const date = displayedStart();
+  date.setDate(date.getDate() + COLS * ROWS);
   return date;
 }
 
-function dateKey(date) {
-  return `${date.getFullYear()}-${p2(date.getMonth() + 1)}-${p2(date.getDate())}`;
+function nthWeekday(year, month, weekday, nth) {
+  const date = new Date(year, month, 1);
+  return 1 + (weekday - date.getDay() + 7) % 7 + (nth - 1) * 7;
+}
+function springEquinox(year) {
+  if (year <= 1979) return Math.floor(20.8357 + 0.242194 * (year - 1980) - Math.floor((year - 1983) / 4));
+  return Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+}
+function autumnEquinox(year) {
+  if (year <= 1979) return Math.floor(23.2588 + 0.242194 * (year - 1980) - Math.floor((year - 1983) / 4));
+  return Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+}
+const holidayCache = new Map();
+function holidays(year) {
+  if (holidayCache.has(year)) return holidayCache.get(year);
+  const set = new Set();
+  const add = (month, day) => set.add(`${year}-${pad2(month + 1)}-${pad2(day)}`);
+  add(0, 1); add(0, nthWeekday(year, 0, 1, 2)); add(1, 11);
+  if (year >= 2020) add(1, 23);
+  add(2, springEquinox(year)); add(3, 29); add(4, 3); add(4, 4); add(4, 5);
+  add(6, year === 2020 ? 23 : year === 2021 ? 22 : nthWeekday(year, 6, 1, 3));
+  add(7, year === 2020 ? 10 : year === 2021 ? 8 : 11);
+  add(8, nthWeekday(year, 8, 1, 3)); add(8, autumnEquinox(year));
+  add(9, year === 2020 ? 24 : year === 2021 ? 23 : nthWeekday(year, 9, 1, 2));
+  add(10, 3); add(10, 23);
+  if (year === 2019) { add(4, 1); add(9, 22); }
+  for (const key of [...set].sort()) {
+    const date = parseDate(key);
+    if (date.getDay() !== 0) continue;
+    do { date.setDate(date.getDate() + 1); } while (set.has(dateKey(date)));
+    if (date.getFullYear() === year) set.add(dateKey(date));
+  }
+  for (let month = 0; month < 12; month++) {
+    for (let day = 2; day <= 30; day++) {
+      const date = new Date(year, month, day);
+      if (date.getMonth() !== month || set.has(dateKey(date))) continue;
+      const before = new Date(date); before.setDate(day - 1);
+      const after = new Date(date); after.setDate(day + 1);
+      if (set.has(dateKey(before)) && set.has(dateKey(after))) set.add(dateKey(date));
+    }
+  }
+  holidayCache.set(year, set);
+  return set;
+}
+const isAutomaticHoliday = date => date.getDay() === 0 || holidays(date.getFullYear()).has(dateKey(date));
+function isHoliday(date) {
+  const key = dateKey(date);
+  return Object.prototype.hasOwnProperty.call(holidayOverrides, key)
+    ? !!holidayOverrides[key] : isAutomaticHoliday(date);
+}
+function shouldMark(date) {
+  const key = dateKey(date);
+  return Object.prototype.hasOwnProperty.call(frameOverrides, key)
+    ? !!frameOverrides[key] : automaticMarkedDates.has(key);
 }
 
-function getDisplayedWeekKeys() {
-  const baseDate = getBaseDate();
-  if (!baseDate) return [];
-  const startDate = getSundayOfWeek(baseDate);
-  startDate.setDate(startDate.getDate() - 14);
-  return Array.from({ length: ROWS }, (_, row) => {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + row * 7);
-    return dateKey(date);
+function rebuildItemIndex() {
+  itemsByDate = new Map();
+  automaticMarkedDates = new Set();
+  for (const item of [...calendarItems, ...taskItems]) {
+    if (!item || !item.date) continue;
+    if (!itemsByDate.has(item.date)) itemsByDate.set(item.date, []);
+    itemsByDate.get(item.date).push(item);
+    automaticMarkedDates.add(item.date);
+  }
+  for (const values of itemsByDate.values()) {
+    values.sort((a, b) => (a.type === b.type ? String(a.time || '').localeCompare(String(b.time || '')) : a.type === 'event' ? -1 : 1));
+  }
+}
+
+function selectNearestDetailDate() {
+  if (detailSelectionManual) return;
+  const baseKey = $('baseDate').value;
+  const startKey = dateKey(displayedStart());
+  const endKey = dateKey(displayedEnd());
+  const candidates = new Set([...itemsByDate.keys(), ...Object.keys(frameOverrides)]);
+  const available = [...candidates]
+    .filter(key => key >= startKey && key < endKey && shouldMark(parseDate(key)))
+    .sort();
+  const upcoming = available.find(key => key >= baseKey);
+  selectedDetailKey = upcoming || available[available.length - 1] || baseKey;
+}
+
+function monthForRow(start, row) {
+  const sunday = new Date(start);
+  sunday.setDate(start.getDate() + row * 7);
+  for (let offset = 0; offset < 7; offset++) {
+    const date = new Date(sunday);
+    date.setDate(sunday.getDate() + offset);
+    if (date.getDate() === 1) return date.getMonth() + 1;
+  }
+  return sunday.getMonth() + 1;
+}
+
+function drawCalendar() {
+  const family = $('fontFamily').value;
+  const size = Math.max(13, Math.min(20, Number($('fontSize').value) || 17));
+  const weight = $('bold').checked ? '700' : '400';
+  const weekdaySize = Math.max(8, Math.min(15, size - 5));
+  const monthSize = Math.max(10, Math.min(20,
+    Number($('monthFontSize').value) || 15));
+  const start = displayedStart();
+  const baseKey = $('baseDate').value;
+  hitCells = [];
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 200, 200);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${weight} ${weekdaySize}px ${family}`;
+  for (let column = 0; column < COLS; column++) {
+    ctx.fillStyle = column === 0 ? '#f00' : '#000';
+    ctx.fillText(WEEKDAYS[column], GRID_X + column * CELL_W + CELL_W / 2, 9);
+  }
+  ctx.fillStyle = '#000';
+  ctx.fillRect(MONTH_DIVIDER_X + 1, HEADER_H - 1,
+    200 - MONTH_DIVIDER_X - 1, 1);
+  ctx.fillRect(MONTH_DIVIDER_X, 0, 1, CALENDAR_BOTTOM);
+
+  for (let index = 0; index < ROWS * COLS; index++) {
+    const row = Math.floor(index / COLS);
+    const column = index % COLS;
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const key = dateKey(date);
+    const x = GRID_X + column * CELL_W;
+    const y = GRID_Y + row * CELL_H;
+    const red = isHoliday(date);
+    const selected = key === baseKey;
+    hitCells.push({ key, x, y, w: CELL_W, h: CELL_H });
+    if (selected) {
+      ctx.fillStyle = red ? '#f00' : '#000';
+      ctx.fillRect(Math.ceil(x) + 1, y + 2, Math.floor(CELL_W) - 2, CELL_H - 4);
+    }
+    if (shouldMark(date)) {
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(Math.ceil(x) + 0.75, y + 1.75, Math.floor(CELL_W) - 1.5, CELL_H - 3.5);
+    }
+    ctx.font = `${weight} ${size}px ${family}`;
+    ctx.fillStyle = selected ? '#fff' : (red ? '#f00' : '#000');
+    ctx.fillText(String(date.getDate()), x + CELL_W / 2, y + CELL_H / 2 + 1);
+  }
+
+  let previousMonth = -1;
+  for (let row = 0; row < ROWS; row++) {
+    const month = monthForRow(start, row);
+    if (month === previousMonth) continue;
+    previousMonth = month;
+    ctx.font = `700 ${monthSize}px ${family}`;
+    ctx.fillStyle = '#000';
+    ctx.fillText(String(month), MONTH_CENTER_X,
+      GRID_Y + row * CELL_H + CELL_H / 2 + 1);
+  }
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, CALENDAR_BOTTOM, 200, 1);
+  drawDetails();
+  ctx.restore();
+  if ($('quantize').checked) quantizeThreeColor();
+}
+
+function fitText(text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let value = text;
+  while (value.length > 1 && ctx.measureText(`${value}…`).width > maxWidth) value = value.slice(0, -1);
+  return `${value}…`;
+}
+function drawDetails() {
+  const family = $('detailFontFamily').value || OLD_APP_DEFAULT_DETAIL_FONT;
+  const detailSize = Math.max(7, Math.min(14,
+    Number($('detailFontSize').value) || 9));
+  const detailWeight = $('detailBold').checked ? '700' : '400';
+  const headerSize = Math.min(14, detailSize + 1);
+  const key = selectedDetailKey || $('baseDate').value;
+  const date = parseDate(key);
+  const values = [...(itemsByDate.get(key) || [])];
+  if (Object.prototype.hasOwnProperty.call(frameOverrides, key) && frameOverrides[key]
+      && !automaticMarkedDates.has(key)) {
+    values.push({ type: 'manual', title: '手動設定の予定' });
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#000';
+  ctx.font = `${detailWeight} ${headerSize}px ${family}`;
+  const header = `${date.getMonth() + 1}/${date.getDate()}(${DETAIL_WEEKDAYS[date.getDay()]})`;
+  ctx.fillText(header, 2, 143);
+  ctx.font = `${detailWeight} ${detailSize}px ${family}`;
+  const firstLineY = 143 + headerSize + 2;
+  if (values.length === 0) {
+    ctx.fillText('予定・タスクなし', 2, firstLineY);
+    return;
+  }
+  const lineHeight = detailSize + 2;
+  const maxLines = Math.max(1, Math.floor((200 - firstLineY) / lineHeight));
+  const visible = values.slice(0, maxLines);
+  let y = firstLineY;
+  visible.forEach((item, index) => {
+    const prefix = item.type === 'task' ? '□ ' : '・';
+    const time = item.time ? `${item.time} ` : '';
+    const remaining = values.length - visible.length;
+    const suffix = index === visible.length - 1 && remaining > 0
+      ? `　ほか${remaining}件` : '';
+    ctx.fillText(fitText(`${prefix}${time}${item.title || '名称なし'}${suffix}`, 196), 2, y);
+    y += lineHeight;
   });
 }
 
-function applyOneBitSharpen(canvas, context) {
-  if (!get('antiAlias').checked) return;
-  const image = context.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = image.data;
-  for (let i = 0; i < pixels.length; i += 4) {
-    const luminance = pixels[i] * 0.299 + pixels[i + 1] * 0.587 + pixels[i + 2] * 0.114;
-    const value = luminance < 160 ? 0 : 255;
-    pixels[i] = value;
-    pixels[i + 1] = value;
-    pixels[i + 2] = value;
-    pixels[i + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
-}
-
-// 笏笏 繧ｫ繝ｬ繝ｳ繝繝ｼ謠冗判繧ｳ繧｢ 笏笏
-// showMemos=true 竊・邵ｦ邱壹・讓ｪ邱壹・繝｡繝｢1繝ｻ繝｡繝｢2繧呈緒逕ｻ・亥・菴薙・繝ｬ繝薙Η繝ｼ・・// showMemos=false 竊・邵ｦ邱壹・縺ｿ謠冗判縲√Γ繝｢1繧よ緒逕ｻ・医き繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ・・// 窶ｻ邵ｦ邱壹・縺ｩ縺｡繧峨ｂ蟶ｸ縺ｫ謠冗判
-
-function drawCalendar(c, canvasH, showMemos) {
-  const dark      = get('darkMode').checked;
-  const color     = dark ? '#ffffff' : '#000000';
-  const bg        = dark ? '#000000' : '#ffffff';
-  const size      = getNumberValue('fontSize', 18);
-  const pad       = Math.max(2, getNumberValue('padding', 2));
-  const font      = get('fontSel').value;
-  const weight    = get('fontWeight').value;
-  const extra     = pad - 2;
-
-  const baseDateStr = get('baseDate').value;
-  if (!baseDateStr) return null;
-  const [y, m, d] = baseDateStr.split('-').map(Number);
-  const baseDate = new Date(y, m-1, d); baseDate.setHours(0,0,0,0);
-  const weekSun   = getSundayOfWeek(baseDate);
-  const startDate = new Date(weekSun);
-  startDate.setDate(startDate.getDate() - 14);
-
-  c.save();
-  c.imageSmoothingEnabled = false;
-  c.font = `${weight} ${size}px ${font}`;
-  c.textBaseline = 'top';
-
-  const twoDigitW = Math.ceil(getTwoDigitMaxW(c, weight, size, font));
-  const boxW  = twoDigitW + 2;
-  const boxH  = size + 2;
-  const cW    = boxW + extra * 2;
-  const cH    = boxH + extra * 2;
-
-  const mColW = twoDigitW - 1;
-  const mColX = MONTH_OFFSET_X;
-  const calX  = mColX + mColW + 1 + CAL_OFFSET_X;
-  const startY = 0; // 蜈ｨ菴薙ｒ荳顔ｫｯ縺ｫ隧ｰ繧√ｋ
-
-  const lastColX = colX(calX, COLS - 1, cW);
-  const divX     = lastColX + cW;
-  const memoX    = divX + 2; // 繧ｫ繝ｬ繝ｳ繝繝ｼ縺ｨ縺ｮ菴咏區縺ｯ2px縺ｮ縺ｿ
-  const memoW    = 176 - memoX;
-
-  // 閭梧勹
-  c.fillStyle = bg;
-  c.fillRect(0, 0, 176, canvasH);
-
-  if (showMemos) {
-    const hLineY = startY + ROWS * cH + 1;
-    c.fillStyle = color;
-    c.fillRect(2, hLineY, 172, 1);
-  }
-
-  // 笏笏 繧ｫ繝ｬ繝ｳ繝繝ｼ謨ｰ蟄励・譫繝ｻ蜿崎ｻ｢ 笏笏
-  const cells = [];
-  for (let i = 0; i < COLS * ROWS; i++) {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
-    const cx  = colX(calX, col, cW);
-    const cy  = startY + row * cH;
-    if (cy + cH > canvasH) continue;
-
-    const cellDate = new Date(startDate);
-    cellDate.setDate(startDate.getDate() + i);
-    cellDate.setHours(0,0,0,0);
-
-    const dayNum = cellDate.getDate();
-    const txt    = String(dayNum);
-    const tw     = c.measureText(txt).width;
-    const bx = cx + extra;
-    const by = cy + extra;
-    const tx = bx + 1 + (twoDigitW - tw);
-    const ty = by + 1 + NUMBER_OFFSET_Y;
-
-    const isSelected = cellDate.getTime() === baseDate.getTime();
-    const isFramed = isDateFramed(cellDate);
-    cells.push({ key: dateKey(cellDate), x: cx, y: cy, w: cW, h: cH });
-
-    if (isSelected) {
-      c.fillStyle = color;
-      c.fillRect(
-        bx + SELECTED_INSET,
-        by + SELECTED_INSET,
-        boxW - SELECTED_INSET * 2,
-        boxH - SELECTED_INSET * 2
-      );
-      c.fillStyle = bg;    c.fillText(txt, tx, ty);
+function quantizeThreeColor() {
+  const image = ctx.getImageData(0, 0, 200, 200);
+  const data = image.data;
+  for (let index = 0; index < data.length; index += 4) {
+    const red = data[index], green = data[index + 1], blue = data[index + 2];
+    if (red > 130 && red > green * 1.35 && red > blue * 1.35) {
+      data[index] = 255; data[index + 1] = 0; data[index + 2] = 0;
     } else {
-      c.fillStyle = color; c.fillText(txt, tx, ty);
+      const value = red * 0.299 + green * 0.587 + blue * 0.114 < 170 ? 0 : 255;
+      data[index] = value; data[index + 1] = value; data[index + 2] = value;
     }
-    if (isFramed) {
-      c.strokeStyle = color; c.lineWidth = 1;
-      c.strokeRect(bx + 0.5, by + 0.5, boxW - 1, boxH - 1);
-    }
+    data[index + 3] = 255;
   }
-
-  // 笏笏 譛亥・・域焚蟄怜崋螳夲ｼ・笏笏
-  for (let row = 0; row < ROWS; row++) {
-    const cy = startY + row * cH;
-    if (cy + cH > canvasH) continue;
-    const rowSun = new Date(startDate);
-    rowSun.setDate(startDate.getDate() + row * COLS); rowSun.setHours(0,0,0,0);
-    const newMonth    = getNewMonthInWeek(rowSun);
-    const monthToShow = (newMonth !== null) ? newMonth : rowSun.getMonth();
-    let show = true;
-    if (row > 0) {
-      const prevSun = new Date(startDate);
-      prevSun.setDate(startDate.getDate() + (row-1) * COLS); prevSun.setHours(0,0,0,0);
-      const prevNew   = getNewMonthInWeek(prevSun);
-      const prevShown = (prevNew !== null) ? prevNew : prevSun.getMonth();
-      show = monthToShow !== prevShown;
-    }
-    if (show) {
-      const label = String(monthToShow + 1);
-      c.font = `${weight} ${size}px ${font}`;
-      c.textBaseline = 'top';
-      const lw = c.measureText(label).width;
-      c.fillStyle = color;
-      c.fillText(label, mColX + Math.round((mColW - lw) / 2), cy + extra + 1 + NUMBER_OFFSET_Y);
-    }
-  }
-
-  // 笏笏 繝｡繝｢1・医き繝ｬ繝ｳ繝繝ｼ繝励Ξ繝薙Η繝ｼ縺ｧ繧よ緒逕ｻ・・笏笏
-  const memoLines = get('memoText').value.split('\n').slice(0, ROWS);
-  const memoFont  = get('memoFont').value;
-  const memoSize  = getNumberValue('memoFontSize', 14);
-  c.textBaseline = 'top';
-  for (let row = 0; row < ROWS; row++) {
-    const line = memoLines[row] || ''; if (!line) continue;
-    const cy = startY + row * cH;
-    if (cy + cH > canvasH) continue;
-    c.font = `${weight} ${memoSize}px ${memoFont}`;
-    c.fillStyle = color;
-    c.save();
-    c.beginPath(); c.rect(memoX, cy, memoW, cH); c.clip();
-    c.fillText(line, memoX, cy + extra + 1);
-    c.restore();
-  }
-
-  c.restore();
-  return { twoDigitW, boxW, boxH, cW, cH, calX, startY, mColW, mColX, extra, divX, memoX, memoW, cells };
-}
-
-// 笏笏 繝｡繝｢2謠冗判・亥・菴薙・繝ｬ繝薙Η繝ｼ縺ｮ縺ｿ・俄楳笏
-
-function drawMemos(c, layout) {
-  const dark     = get('darkMode').checked;
-  const color    = dark ? '#ffffff' : '#000000';
-  const weight   = get('fontWeight').value;
-  const memoFont = get('memoFont').value;
-  const memoSize = getNumberValue('memoFontSize', 14);
-  const memo2Text = get('memo2Text').value;
-
-  const { cH, startY, memoX } = layout;
-  const calBottomY = startY + ROWS * cH;
-  const memo2Y     = calBottomY + 3;
-
-  if (memo2Text) {
-    c.font = `${weight} ${memoSize}px ${memoFont}`;
-    c.textBaseline = 'top'; c.fillStyle = color;
-    const lineH = memoSize + 2;
-    let curY = memo2Y;
-    for (const rawLine of memo2Text.split('\n')) {
-      if (curY + memoSize > 264) break;
-      let line = rawLine;
-      while (line.length > 0) {
-        let end = line.length;
-        while (end > 0 && c.measureText(line.slice(0, end)).width > 176) end--;
-        if (end === 0) end = 1;
-        c.fillText(line.slice(0, end), 0, curY);
-        line = line.slice(end); curY += lineH;
-        if (curY + memoSize > 264) break;
-      }
-    }
-  }
-}
-
-// 笏笏 繝｡繧､繝ｳ謠冗判 笏笏
-
-function draw() {
-  const calLayout = drawCalendar(ctxCal, 176, false);
-  calHitCells = calLayout ? calLayout.cells : [];
-
-  const layout = drawCalendar(ctxFull, 264, true);
-  if (layout) drawMemos(ctxFull, layout);
-  fullHitCells = layout ? layout.cells : [];
-
-  applyOneBitSharpen(cvCal, ctxCal);
-  applyOneBitSharpen(cvFull, ctxFull);
-}
-
-function showDrawError(error) {
-  const message = String(error?.message || error || 'unknown error').slice(0, 48);
-  console.error('preview draw failed', error);
-  for (const [canvas, context] of [[cvCal, ctxCal], [cvFull, ctxFull]]) {
-    context.save();
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#000000';
-    context.font = '700 12px sans-serif';
-    context.textBaseline = 'top';
-    context.fillText('DRAW ERR', 3, 3);
-    context.font = '10px sans-serif';
-    context.fillText(message, 3, 18);
-    context.restore();
-  }
-}
-
-function safeDraw() {
-  try {
-    draw();
-  } catch (error) {
-    showDrawError(error);
-  }
-}
-
-// 笏笏 繧､繝吶Φ繝・笏笏
-
-const STORAGE_KEY = 'wearable-calendar-v2';
-const MEMO1_WEEKS_KEY = 'wearable-calendar-memo1-weeks-v1';
-const FRAME_OVERRIDES_KEY = 'wearable-calendar-frame-overrides-v1';
-const FIELD_IDS = [
-  'fontSel', 'fontSize', 'padding', 'fontWeight',
-  'memoFont', 'memoFontSize', 'darkMode', 'antiAlias', 'memoText', 'memo2Text'
-];
-
-function getNumberValue(id, fallback) {
-  const value = parseInt(get(id).value, 10);
-  return Number.isFinite(value) ? value : fallback;
-}
-
-function clampNumberInput(el) {
-  const min = parseInt(el.min, 10);
-  const max = parseInt(el.max, 10);
-  const fallback = parseInt(el.defaultValue || el.value || el.min || '0', 10);
-  let value = parseInt(el.value, 10);
-  if (!Number.isFinite(value)) value = fallback;
-  if (Number.isFinite(min)) value = Math.max(min, value);
-  if (Number.isFinite(max)) value = Math.min(max, value);
-  el.value = String(value);
+  ctx.putImageData(image, 0, 0);
 }
 
 function saveSettings() {
-  const data = {};
-  for (const id of FIELD_IDS) {
-    const el = get(id);
-    data[id] = el.type === 'checkbox' ? el.checked : el.value;
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+    fontSize: $('fontSize').value,
+    monthFontSize: $('monthFontSize').value,
+    fontFamily: $('fontFamily').value,
+    detailFontSize: $('detailFontSize').value,
+    detailFontFamily: $('detailFontFamily').value,
+    detailBold: $('detailBold').checked,
+    bold: $('bold').checked,
+    quantize: $('quantize').checked
+  }));
 }
-
-function loadFrameOverrides() {
-  try {
-    dateFrameOverrides = JSON.parse(localStorage.getItem(FRAME_OVERRIDES_KEY) || '{}');
-  } catch (e) {
-    dateFrameOverrides = {};
-  }
-}
-
-function saveFrameOverrides() {
-  localStorage.setItem(FRAME_OVERRIDES_KEY, JSON.stringify(dateFrameOverrides));
-}
-
-function toggleDateFrame(key) {
-  const date = dateFromKey(key);
-  const current = isDateFramed(date);
-  const next = !current;
-  if (next === isDefaultFramedDate(date)) {
-    delete dateFrameOverrides[key];
-  } else {
-    dateFrameOverrides[key] = next;
-  }
-  saveFrameOverrides();
-}
-
-function loadMemo1Weeks() {
-  try {
-    return JSON.parse(localStorage.getItem(MEMO1_WEEKS_KEY) || '{}');
-  } catch (e) {
-    return {};
-  }
-}
-
-function saveMemo1ForDisplayedWeeks() {
-  const weeks = loadMemo1Weeks();
-  const keys = getDisplayedWeekKeys();
-  const lines = get('memoText').value.split('\n').slice(0, ROWS);
-  keys.forEach((key, index) => {
-    const line = lines[index] || '';
-    if (line) weeks[key] = line;
-    else delete weeks[key];
-  });
-  localStorage.setItem(MEMO1_WEEKS_KEY, JSON.stringify(weeks));
-}
-
-function restoreMemo1ForDisplayedWeeks() {
-  const keys = getDisplayedWeekKeys();
-  const weeks = loadMemo1Weeks();
-  get('memoText').value = keys.map(key => weeks[key] || '').join('\n').replace(/\n+$/, '');
-}
-
-function migrateLegacyMemo1() {
-  if (localStorage.getItem(MEMO1_WEEKS_KEY)) return;
-  saveMemo1ForDisplayedWeeks();
-}
-
 function restoreSettings() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const data = JSON.parse(raw);
-    for (const id of FIELD_IDS) {
-      const el = get(id);
-      if (!(id in data)) continue;
-      if (el.type === 'checkbox') el.checked = !!data[id];
-      else el.value = data[id];
+    const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    if (settings.fontSize) $('fontSize').value = settings.fontSize;
+    if (settings.monthFontSize) $('monthFontSize').value = settings.monthFontSize;
+    if (settings.fontFamily) {
+      const migratedFont = ['sans-serif', 'serif', 'monospace'].includes(settings.fontFamily)
+        ? OLD_APP_DEFAULT_FONT : settings.fontFamily;
+      const supported = [...$('fontFamily').options].some(option => option.value === migratedFont);
+      $('fontFamily').value = supported ? migratedFont : OLD_APP_DEFAULT_FONT;
     }
-    ['fontSize', 'padding', 'memoFontSize'].forEach(id => clampNumberInput(get(id)));
-  } catch (e) {
-    console.warn('險ｭ螳壹・蠕ｩ蜈・↓螟ｱ謨励＠縺ｾ縺励◆', e);
+    if (settings.detailFontSize) $('detailFontSize').value = settings.detailFontSize;
+    if (settings.detailFontFamily) {
+      const supported = [...$('detailFontFamily').options]
+        .some(option => option.value === settings.detailFontFamily);
+      $('detailFontFamily').value = supported
+        ? settings.detailFontFamily : OLD_APP_DEFAULT_DETAIL_FONT;
+    }
+    if (typeof settings.detailBold === 'boolean') {
+      $('detailBold').checked = settings.detailBold;
+    }
+    if (typeof settings.bold === 'boolean') $('bold').checked = settings.bold;
+    if (typeof settings.quantize === 'boolean') $('quantize').checked = settings.quantize;
+    frameOverrides = JSON.parse(localStorage.getItem(FRAME_OVERRIDES_KEY) || '{}');
+    holidayOverrides = JSON.parse(localStorage.getItem(HOLIDAY_OVERRIDES_KEY) || '{}');
+  } catch (_) {
+    frameOverrides = {};
+    holidayOverrides = {};
   }
 }
-
-function drawAndSave() {
-  safeDraw();
-  saveSettings();
+function saveOverrides() {
+  localStorage.setItem(FRAME_OVERRIDES_KEY, JSON.stringify(frameOverrides));
+  localStorage.setItem(HOLIDAY_OVERRIDES_KEY, JSON.stringify(holidayOverrides));
 }
 
-document.querySelectorAll('.step-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const id = btn.dataset.stepTarget;
-    const delta = parseInt(btn.dataset.step, 10);
-    const el = get(id);
-    const step = parseInt(el.step || '1', 10) || 1;
-    el.value = String(getNumberValue(id, parseInt(el.defaultValue || el.min || '0', 10)) + delta * step);
-    clampNumberInput(el);
-    drawAndSave();
-  });
-});
-
-function hitDateCell(cells, x, y) {
-  return cells.find(cell =>
-    x >= cell.x && x <= cell.x + cell.w &&
-    y >= cell.y && y <= cell.y + cell.h
-  );
-}
-
-function showTapLoupe(clientX, clientY, canvasX, canvasY) {
-  const srcSize = 24;
-  const zoom = tapLoupeCanvas.width / srcSize;
-  const sx = Math.max(0, Math.min(cvFull.width - srcSize, Math.round(canvasX - srcSize / 2)));
-  const sy = Math.max(0, Math.min(cvFull.height - srcSize, Math.round(canvasY - srcSize / 2)));
-  const markX = (canvasX - sx) * zoom;
-  const markY = (canvasY - sy) * zoom;
-
-  tapLoupeContext.save();
-  tapLoupeContext.imageSmoothingEnabled = false;
-  tapLoupeContext.clearRect(0, 0, tapLoupeCanvas.width, tapLoupeCanvas.height);
-  tapLoupeContext.drawImage(cvFull, sx, sy, srcSize, srcSize, 0, 0, tapLoupeCanvas.width, tapLoupeCanvas.height);
-  tapLoupeContext.lineWidth = 3;
-  tapLoupeContext.strokeStyle = '#ffffff';
-  tapLoupeContext.beginPath();
-  tapLoupeContext.moveTo(markX, 0);
-  tapLoupeContext.lineTo(markX, tapLoupeCanvas.height);
-  tapLoupeContext.moveTo(0, markY);
-  tapLoupeContext.lineTo(tapLoupeCanvas.width, markY);
-  tapLoupeContext.stroke();
-  tapLoupeContext.lineWidth = 1;
-  tapLoupeContext.strokeStyle = '#000000';
-  tapLoupeContext.beginPath();
-  tapLoupeContext.moveTo(markX, 0);
-  tapLoupeContext.lineTo(markX, tapLoupeCanvas.height);
-  tapLoupeContext.moveTo(0, markY);
-  tapLoupeContext.lineTo(tapLoupeCanvas.width, markY);
-  tapLoupeContext.stroke();
-  tapLoupeContext.restore();
-
-  tapLoupe.classList.remove('hidden');
-  const margin = 8;
-  const gap = 14;
-  const w = tapLoupe.offsetWidth;
-  const h = tapLoupe.offsetHeight;
-  let left = clientX + gap;
-  if (left + w > window.innerWidth - margin) left = clientX - w - gap;
-  left = Math.max(margin, Math.min(window.innerWidth - w - margin, left));
-  let top = clientY - h / 2;
-  top = Math.max(margin, Math.min(window.innerHeight - h - margin, top));
-  tapLoupe.style.left = `${left}px`;
-  tapLoupe.style.top = `${top}px`;
-
-  clearTimeout(tapLoupeTimer);
-  tapLoupeTimer = setTimeout(() => tapLoupe.classList.add('hidden'), 1300);
-}
-
-cvFull.addEventListener('pointerdown', event => {
-  event.preventDefault();
-  const rect = cvFull.getBoundingClientRect();
-  const x = (event.clientX - rect.left) * cvFull.width / rect.width;
-  const y = (event.clientY - rect.top) * cvFull.height / rect.height;
-  const hit = hitDateCell(fullHitCells, x, y);
-  if (hit) {
-    toggleDateFrame(hit.key);
-    drawAndSave();
+function requestCalendarData() {
+  const start = displayedStart();
+  const end = displayedEnd();
+  if (window.AndroidInterface && window.AndroidInterface.requestCalendarData) {
+    $('calendarState').textContent = 'カレンダー予定を確認しています';
+    window.AndroidInterface.requestCalendarData(start.getTime(), end.getTime());
+  } else {
+    $('calendarState').textContent = 'ブラウザ表示では予定・タスク連携を使用できません';
   }
-  showTapLoupe(event.clientX, event.clientY, x, y);
-});
-
-['fontSize', 'padding', 'memoFontSize'].forEach(id => {
-  const el = get(id);
-  el.addEventListener('input', () => {
-    safeDraw();
-    if (el.value !== '') saveSettings();
-  });
-  el.addEventListener('change', () => {
-    clampNumberInput(el);
-    drawAndSave();
-  });
-});
-
-['fontSel','fontWeight','memoFont'].forEach(id =>
-  get(id).addEventListener('change', drawAndSave));
-get('baseDate').addEventListener('change', () => {
-  restoreMemo1ForDisplayedWeeks();
-  drawAndSave();
-});
-['antiAlias','darkMode'].forEach(id =>
-  get(id).addEventListener('change', drawAndSave));
-get('memoText').addEventListener('input', () => {
-  saveMemo1ForDisplayedWeeks();
-  drawAndSave();
-});
-get('memo2Text').addEventListener('input', drawAndSave);
-
-loadFrameOverrides();
-restoreSettings();
-migrateLegacyMemo1();
-restoreMemo1ForDisplayedWeeks();
-safeDraw();
-
-function currentImageDataUrl() {
-  const transferCanvas = document.createElement('canvas');
-  transferCanvas.width = 264;
-  transferCanvas.height = 176;
-  const transferContext = transferCanvas.getContext('2d');
-  transferContext.fillStyle = get('darkMode').checked ? '#000000' : '#ffffff';
-  transferContext.fillRect(0, 0, transferCanvas.width, transferCanvas.height);
-  transferContext.translate(264, 0);
-  transferContext.rotate(Math.PI / 2);
-  transferContext.drawImage(cvFull, 0, 0);
-  return transferCanvas.toDataURL('image/png');
 }
-
-get('btnDl').addEventListener('click', () => {
-  const dataUrl = currentImageDataUrl();
-  if (window.AndroidInterface?.onSavePngRequested) {
-    window.AndroidInterface.onSavePngRequested(dataUrl);
-    return;
-  }
-  const a = document.createElement('a');
-  a.download = 'epaper_calendar_176x264.png';
-  a.href = dataUrl;
-  a.click();
-});
-
-window.getImageDataUrl = currentImageDataUrl;
-window.showSendButton  = () => get('btnSend').classList.remove('hidden');
-window.setTransferStatus = message => {
-  const el = get('transferStatus');
-  el.textContent = message || '';
-  el.classList.toggle('hidden', !message);
-};
-window.clearDebugLog = () => {
-  get('debugLog').textContent = '';
-};
-window.appendDebugLog = message => {
-  const el = get('debugLog');
-  const line = `[${new Date().toLocaleTimeString()}] ${message}`;
-  el.textContent += (el.textContent ? '\n' : '') + line;
-  el.scrollTop = el.scrollHeight;
-};
-window.copyDebugLog = async () => {
-  const text = get('debugLog').textContent || '';
-  if (window.AndroidInterface?.copyDebugLog) {
-    window.AndroidInterface.copyDebugLog(text);
-    return;
-  }
+window.receiveCalendarItems = payload => {
   try {
-    await navigator.clipboard.writeText(text);
-  } catch (e) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
+    calendarItems = typeof payload === 'string' ? JSON.parse(payload) : (payload || []);
+    rebuildItemIndex();
+    selectNearestDetailDate();
+    $('calendarState').textContent = `カレンダー予定 ${calendarItems.length}件を反映`;
+    drawCalendar();
+  } catch (error) {
+    $('calendarState').textContent = `予定の読み込みに失敗: ${error.message}`;
   }
 };
-get('btnCopyDebug').addEventListener('click', window.copyDebugLog);
-get('btnClearDebug').addEventListener('click', window.clearDebugLog);
-get('appVersionLabel').textContent = `v${APP_HTML_VERSION}`;
-get('btnSend').addEventListener('click', () => {
-  const dataUrl = currentImageDataUrl();
-  if (window.AndroidInterface?.onSendRequested)
-    window.AndroidInterface.onSendRequested(dataUrl);
+window.receiveTaskItems = payload => {
+  try {
+    taskItems = typeof payload === 'string' ? JSON.parse(payload) : (payload || []);
+    rebuildItemIndex();
+    selectNearestDetailDate();
+    $('tasksState').textContent = `未完了のGoogleタスク ${taskItems.length}件を反映`;
+    drawCalendar();
+  } catch (error) {
+    $('tasksState').textContent = `タスクの読み込みに失敗: ${error.message}`;
+  }
+};
+window.calendarPermissionDenied = () => $('calendarState').textContent = 'カレンダー権限が必要です';
+window.tasksAuthorizationRequired = () => $('tasksState').textContent = '「Googleタスクを連携・更新」を押してください';
+window.setTasksState = message => $('tasksState').textContent = message || '';
+
+function setMode(mode) {
+  editMode = mode;
+  document.querySelectorAll('.mode').forEach(button => button.classList.toggle('active', button.dataset.mode === mode));
+  const help = {
+    view: '日付を選ぶと、その日の詳細を表示したまま書き込めます。未選択時は次の予定を表示します。',
+    event: '日付を選ぶたびに、予定枠の有無を切り替えます。',
+    holiday: '日付を選ぶたびに、休日の有無を切り替えます。'
+  };
+  $('modeHelp').textContent = help[mode];
+}
+function toggleEvent(key) {
+  const automatic = automaticMarkedDates.has(key);
+  const current = Object.prototype.hasOwnProperty.call(frameOverrides, key) ? !!frameOverrides[key] : automatic;
+  frameOverrides[key] = !current;
+  if (frameOverrides[key] === automatic) delete frameOverrides[key];
+  saveOverrides();
+}
+function toggleHoliday(key) {
+  const date = parseDate(key);
+  const automatic = isAutomaticHoliday(date);
+  holidayOverrides[key] = !isHoliday(date);
+  if (holidayOverrides[key] === automatic) delete holidayOverrides[key];
+  saveOverrides();
+}
+
+function showLoupe(clientX, clientY, pixelX, pixelY) {
+  const shell = $('previewShell').getBoundingClientRect();
+  const sourceSize = 30;
+  const sourceX = Math.max(0, Math.min(200 - sourceSize, Math.round(pixelX - sourceSize / 2)));
+  const sourceY = Math.max(0, Math.min(200 - sourceSize, Math.round(pixelY - sourceSize / 2)));
+  loupeCtx.imageSmoothingEnabled = false;
+  loupeCtx.clearRect(0, 0, 104, 104);
+  loupeCtx.drawImage(canvas, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 104, 104);
+  loupe.style.left = `${Math.max(4, Math.min(shell.width - 116, clientX - shell.left - 56))}px`;
+  loupe.style.top = `${Math.max(4, Math.min(shell.height - 116, clientY - shell.top - 126))}px`;
+  loupe.classList.remove('hidden');
+  clearTimeout(loupeTimer);
+  loupeTimer = setTimeout(() => loupe.classList.add('hidden'), 900);
+}
+
+canvas.addEventListener('pointerdown', event => {
+  const rect = canvas.getBoundingClientRect();
+  const pixelX = (event.clientX - rect.left) * 200 / rect.width;
+  const pixelY = (event.clientY - rect.top) * 200 / rect.height;
+  const cell = hitCells.find(value => pixelX >= value.x && pixelX < value.x + value.w
+    && pixelY >= value.y && pixelY < value.y + value.h);
+  if (cell) {
+    selectedDetailKey = cell.key;
+    if (editMode === 'view') detailSelectionManual = true;
+    if (editMode === 'event') toggleEvent(cell.key);
+    if (editMode === 'holiday') toggleHoliday(cell.key);
+    drawCalendar();
+  }
+  showLoupe(event.clientX, event.clientY, pixelX, pixelY);
 });
 
-setTimeout(safeDraw, 500);
+document.querySelectorAll('.mode').forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
+$('resetSelected').addEventListener('click', () => {
+  const key = selectedDetailKey || $('baseDate').value;
+  delete frameOverrides[key];
+  delete holidayOverrides[key];
+  saveOverrides();
+  drawCalendar();
+});
+function changeWeek(delta) {
+  const date = baseDate();
+  date.setDate(date.getDate() + delta * 7);
+  $('baseDate').value = dateKey(date);
+  selectedDetailKey = $('baseDate').value;
+  detailSelectionManual = false;
+  calendarItems = [];
+  taskItems = [];
+  rebuildItemIndex();
+  drawCalendar();
+  requestCalendarData();
+}
+$('prevWeek').addEventListener('click', () => changeWeek(-1));
+$('nextWeek').addEventListener('click', () => changeWeek(1));
+$('today').addEventListener('click', () => {
+  $('baseDate').value = dateKey(new Date());
+  selectedDetailKey = $('baseDate').value;
+  detailSelectionManual = false;
+  drawCalendar();
+  requestCalendarData();
+});
+$('baseDate').addEventListener('change', () => {
+  selectedDetailKey = $('baseDate').value;
+  detailSelectionManual = false;
+  drawCalendar();
+  requestCalendarData();
+});
+$('connectTasks').addEventListener('click', () => {
+  const start = displayedStart();
+  const end = displayedEnd();
+  if (window.AndroidInterface && window.AndroidInterface.requestGoogleTasksAccess) {
+    window.AndroidInterface.requestGoogleTasksAccess(start.getTime(), end.getTime());
+  } else {
+    $('tasksState').textContent = 'ブラウザ表示ではGoogleタスク連携を使用できません';
+  }
+});
+document.querySelectorAll('.stepper button').forEach(button => button.addEventListener('click', () => {
+  const input = $(button.dataset.target);
+  input.value = Math.max(Number(input.min), Math.min(Number(input.max), Number(input.value) + Number(button.dataset.step)));
+  saveSettings();
+  drawCalendar();
+}));
+['fontSize', 'monthFontSize', 'detailFontSize'].forEach(id => $(id).addEventListener('input', () => { saveSettings(); drawCalendar(); }));
+['fontFamily', 'detailFontFamily', 'bold', 'detailBold', 'quantize'].forEach(id => $(id).addEventListener('change', () => { saveSettings(); drawCalendar(); }));
+
+const imageDataUrl = () => canvas.toDataURL('image/png');
+$('send').addEventListener('click', () => {
+  if (window.AndroidInterface && window.AndroidInterface.onSendRequested) window.AndroidInterface.onSendRequested(imageDataUrl());
+});
+$('save').addEventListener('click', () => {
+  const dataUrl = imageDataUrl();
+  if (window.AndroidInterface && window.AndroidInterface.onSavePngRequested) {
+    window.AndroidInterface.onSavePngRequested(dataUrl);
+  } else {
+    const anchor = document.createElement('a');
+    anchor.download = 'epaper_calendar_200x200.png';
+    anchor.href = dataUrl;
+    anchor.click();
+  }
+});
+window.setTransferStatus = message => $('transferStatus').textContent = message || '';
+window.clearDebugLog = () => $('debugLog').textContent = '';
+window.appendDebugLog = message => {
+  const line = `[${new Date().toLocaleTimeString()}] ${message}`;
+  $('debugLog').textContent += ($('debugLog').textContent ? '\n' : '') + line;
+  $('debugLog').scrollTop = $('debugLog').scrollHeight;
+};
+$('clearDebug').addEventListener('click', window.clearDebugLog);
+$('copyDebug').addEventListener('click', () => {
+  const text = $('debugLog').textContent || '';
+  if (window.AndroidInterface && window.AndroidInterface.copyDebugLog) window.AndroidInterface.copyDebugLog(text);
+  else if (navigator.clipboard) navigator.clipboard.writeText(text);
+});
+
+$('baseDate').value = dateKey(new Date());
+selectedDetailKey = $('baseDate').value;
+$('version').textContent = `HTML v${APP_HTML_VERSION}`;
+restoreSettings();
+rebuildItemIndex();
+if (new URLSearchParams(location.search).has('demo')) {
+  const demoKey = $('baseDate').value;
+  calendarItems = [
+    { date: demoKey, type: 'event', time: '09:30', title: '定例ミーティング' },
+    { date: demoKey, type: 'event', time: '14:00', title: '歯科検診' }
+  ];
+  taskItems = [
+    { date: demoKey, type: 'task', title: '資料を提出する' },
+    { date: demoKey, type: 'task', title: '買い物リストを確認' }
+  ];
+  rebuildItemIndex();
+  selectNearestDetailDate();
+}
+drawCalendar();
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(drawCalendar);
+}
+setTimeout(requestCalendarData, 250);
 </script>
 </body>
 </html>
