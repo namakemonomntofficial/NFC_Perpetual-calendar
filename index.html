@@ -43,14 +43,10 @@
 
   <section>
     <div class="row">
-      <button class="mode active" data-mode="view">詳細を見る</button>
-      <button class="mode" data-mode="event">予定モード</button>
+      <button class="mode active" data-mode="event">予定モード</button>
       <button class="mode holiday" data-mode="holiday">休日モード</button>
     </div>
-    <div class="status" id="modeHelp">日付を選ぶと、その日の詳細を表示したまま書き込めます。未選択時は次の予定を表示します。</div>
-    <div class="row">
-      <button id="resetSelected">選択日の手動設定を自動に戻す</button>
-    </div>
+    <div class="status" id="modeHelp">日付を選ぶたびに、予定枠の有無を切り替えます。</div>
   </section>
 
   <section>
@@ -142,7 +138,7 @@
 
 <script>
 'use strict';
-const APP_HTML_VERSION = '2026.08.10.3';
+const APP_HTML_VERSION = '2026.08.10.5';
 window.NFC_CALENDAR_VERSION = APP_HTML_VERSION;
 
 const $ = id => document.getElementById(id);
@@ -177,9 +173,8 @@ let automaticMarkedDates = new Set();
 let frameOverrides = {};
 let holidayOverrides = {};
 let hitCells = [];
-let editMode = 'view';
+let editMode = 'event';
 let selectedDetailKey = '';
-let detailSelectionManual = false;
 let loupeTimer = 0;
 
 const pad2 = value => String(value).padStart(2, '0');
@@ -196,9 +191,14 @@ function displayedStart() {
   date.setDate(date.getDate() - date.getDay() - 14);
   return date;
 }
-function displayedEnd() {
-  const date = displayedStart();
-  date.setDate(date.getDate() + COLS * ROWS);
+function sixMonthHorizonEnd() {
+  const date = baseDate();
+  const originalDay = date.getDate();
+  date.setDate(1);
+  date.setMonth(date.getMonth() + 6);
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  date.setDate(Math.min(originalDay, lastDay));
+  date.setDate(date.getDate() + 1);
   return date;
 }
 
@@ -273,16 +273,13 @@ function rebuildItemIndex() {
 }
 
 function selectNearestDetailDate() {
-  if (detailSelectionManual) return;
   const baseKey = $('baseDate').value;
-  const startKey = dateKey(displayedStart());
-  const endKey = dateKey(displayedEnd());
+  const endKey = dateKey(sixMonthHorizonEnd());
   const candidates = new Set([...itemsByDate.keys(), ...Object.keys(frameOverrides)]);
   const available = [...candidates]
-    .filter(key => key >= startKey && key < endKey && shouldMark(parseDate(key)))
+    .filter(key => key >= baseKey && key < endKey && shouldMark(parseDate(key)))
     .sort();
-  const upcoming = available.find(key => key >= baseKey);
-  selectedDetailKey = upcoming || available[available.length - 1] || baseKey;
+  selectedDetailKey = available[0] || baseKey;
 }
 
 function monthForRow(start, row) {
@@ -475,9 +472,9 @@ function saveOverrides() {
 
 function requestCalendarData() {
   const start = displayedStart();
-  const end = displayedEnd();
+  const end = sixMonthHorizonEnd();
   if (window.AndroidInterface && window.AndroidInterface.requestCalendarData) {
-    $('calendarState').textContent = 'カレンダー予定を確認しています';
+    $('calendarState').textContent = '6か月先までのカレンダー予定を確認しています';
     window.AndroidInterface.requestCalendarData(start.getTime(), end.getTime());
   } else {
     $('calendarState').textContent = 'ブラウザ表示では予定・タスク連携を使用できません';
@@ -513,7 +510,6 @@ function setMode(mode) {
   editMode = mode;
   document.querySelectorAll('.mode').forEach(button => button.classList.toggle('active', button.dataset.mode === mode));
   const help = {
-    view: '日付を選ぶと、その日の詳細を表示したまま書き込めます。未選択時は次の予定を表示します。',
     event: '日付を選ぶたびに、予定枠の有無を切り替えます。',
     holiday: '日付を選ぶたびに、休日の有無を切り替えます。'
   };
@@ -556,32 +552,24 @@ canvas.addEventListener('pointerdown', event => {
   const cell = hitCells.find(value => pixelX >= value.x && pixelX < value.x + value.w
     && pixelY >= value.y && pixelY < value.y + value.h);
   if (cell) {
-    selectedDetailKey = cell.key;
-    if (editMode === 'view') detailSelectionManual = true;
     if (editMode === 'event') toggleEvent(cell.key);
     if (editMode === 'holiday') toggleHoliday(cell.key);
+    selectNearestDetailDate();
     drawCalendar();
   }
   showLoupe(event.clientX, event.clientY, pixelX, pixelY);
 });
 
 document.querySelectorAll('.mode').forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
-$('resetSelected').addEventListener('click', () => {
-  const key = selectedDetailKey || $('baseDate').value;
-  delete frameOverrides[key];
-  delete holidayOverrides[key];
-  saveOverrides();
-  drawCalendar();
-});
 function changeWeek(delta) {
   const date = baseDate();
   date.setDate(date.getDate() + delta * 7);
   $('baseDate').value = dateKey(date);
   selectedDetailKey = $('baseDate').value;
-  detailSelectionManual = false;
   calendarItems = [];
   taskItems = [];
   rebuildItemIndex();
+  selectNearestDetailDate();
   drawCalendar();
   requestCalendarData();
 }
@@ -590,19 +578,25 @@ $('nextWeek').addEventListener('click', () => changeWeek(1));
 $('today').addEventListener('click', () => {
   $('baseDate').value = dateKey(new Date());
   selectedDetailKey = $('baseDate').value;
-  detailSelectionManual = false;
+  calendarItems = [];
+  taskItems = [];
+  rebuildItemIndex();
+  selectNearestDetailDate();
   drawCalendar();
   requestCalendarData();
 });
 $('baseDate').addEventListener('change', () => {
   selectedDetailKey = $('baseDate').value;
-  detailSelectionManual = false;
+  calendarItems = [];
+  taskItems = [];
+  rebuildItemIndex();
+  selectNearestDetailDate();
   drawCalendar();
   requestCalendarData();
 });
 $('connectTasks').addEventListener('click', () => {
   const start = displayedStart();
-  const end = displayedEnd();
+  const end = sixMonthHorizonEnd();
   if (window.AndroidInterface && window.AndroidInterface.requestGoogleTasksAccess) {
     window.AndroidInterface.requestGoogleTasksAccess(start.getTime(), end.getTime());
   } else {
